@@ -27,6 +27,7 @@ contem as informações que o hibernate ira seguir para realizar a conexão com 
 **3º passo (opcional/recomendado)** deve-se criar o arquivo **hibernate.properties** no projeto
 ```
 # Arquivo exemplo usando banco de dados mysql
+# Caso queira que as propriedades do c3p0 funcione deve-se importar sua respectiva dependencia
 
 # hibernate
 hibernate.connection.username=user
