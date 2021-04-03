@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>br.com.hcf</groupId>
+	<artifactId>hcf-data</artifactId>
+	<version>3.0.0</version>
+	<name>Hibernate Connector Facilitator</name>
+	<description>DAO genérica para persistência de banco de dados.</description>
+	<url>https://github.com/Eduardo-Karpinski/hcf</url>
+	<developers>
+		<developer>
+			<id>Eduardo-Karpinski</id>
+			<name>Eduardo William Karpinski Priester</name>
+			<email>karpinskipriester@gmail.com</email>
+			<url>https://github.com/Eduardo-Karpinski</url>
+		</developer>
+	</developers>
+	<dependencies>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-core</artifactId>
+			<version>5.4.30.Final</version>
+		</dependency>
+	</dependencies>
+	<build>
+		<sourceDirectory>src</sourceDirectory>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.0</version>
+				<configuration>
+					<release>11</release>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<properties>
+		<java.version>11</java.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+	</properties>
+	<distributionManagement>
+		<repository>
+			<id>myMavenRepo.write</id>
+			<url>https://mymavenrepo.com/repo/Jdrsh2rQSWiAMUbsMfny/</url>
+		</repository>
+	</distributionManagement>
+</project>
