@@ -47,7 +47,7 @@ hibernate.enable_lazy_load_no_trans=true
 ```
 
 ## Executando os testes
-Para testar a aplicação basta executar uma chamada simples do HCF e se tudo estiver
+Para testar a api basta executar uma chamada simples do HCF e se tudo estiver
 configurado de forma correta o teste sera um sucesso, lembrando que a class deve estar
 com a anotação Entity implementada.
 ```
