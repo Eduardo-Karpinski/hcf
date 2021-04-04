@@ -142,7 +142,7 @@ public final class HCFConnection<T, E> {
 		}
 	}
 	
-	public List<T> getByRelations(Class<?> father, String column, String field, Object id) {
+	public List<T> getRelations(Class<?> father, String column, String field, Object id) {
 		try {
 			CriteriaBuilder builder = session.getCriteriaBuilder();
 			CriteriaQuery<T> criteria = builder.createQuery(classe);
