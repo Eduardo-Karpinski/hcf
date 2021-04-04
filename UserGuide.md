@@ -108,6 +108,23 @@ pegar do 11 registro a frente ainda limitando 10 e 10 colocariamos limit ainda c
 mas o offset tambem com 10 assim o range que sera pego 11 a 21, podesse fazer uma procura
 so utilizando o objeto **HCFOrder** com o metodo **getByOrders**.
 
+## TRAZENDO SOMA DE COLUNAS
+```
+Object allPricesAddedWithoutParameters  = new HCFConnection<>(Product.class).bringAddition(Collections.singletonList("price"), "");
+System.out.println(allPricesAddedWithoutParameters);
+		
+Object[] allPricesAddedWithParameters  = (Object[]) new HCFConnection<>(Product.class).bringAddition(Arrays.asList("price", "id"),
+	"id", 1, HCFParameter.EQUAL, HCFOperator.DEFAULT,
+	"id", 2, HCFParameter.EQUAL, HCFOperator.OR);
+System.out.println(allPricesAddedWithParameters[0]);
+System.out.println(allPricesAddedWithParameters[1]);
+```
+
+#### INFORMATIVO
+* no caso de ser passado mais de uma coluna para o bringAddition o mesmo não devolvera um resultado mais sim
+a quantidade de colunas passadas, existe uma outra implementação do mesmo metodo onde se passa um string para
+o mesmo fazer um **group by** com a parametro passado.
+
 # METODO SEARCH
 O metodo search é o principal metodo de busca da api com o mesmo podendo
 fazer inumeras requisições, sendo que existem duas implementações, uma que
