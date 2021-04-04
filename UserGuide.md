@@ -32,6 +32,30 @@ enum Type {
     return description;
   }
 }
+
+@Entity
+class StyleOne {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	private String name;
+
+	// constructors and getters + setters and override of toString
+
+}
+
+@Entity
+class StyleTwo {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	private String name;
+	
+	// constructors and getters + setters and override of toString
+}
+
 ```
 
 ## INSERINDO REGISTRO
@@ -133,6 +157,21 @@ System.out.println(allPricesAddedWithParameters[1]);
 * no caso de ser passado mais de uma coluna para o bringAddition o mesmo não devolvera um resultado mais sim
 a quantidade de colunas passadas, existe uma outra implementação do mesmo metodo onde se passa um string para
 o mesmo fazer um **group by** com a parametro passado.
+
+## TRAZENDO REGISTRO POR RELACIONAMENTO INVERTIDO
+```
+Product product = new HCFConnection<>(Product.class).getByInvertedRelation("StylesOne", "id", "15").get(0);
+System.out.println(product.toString());
+		
+List<Product> products = new HCFConnection<>(Product.class).getByInvertedRelation("StylesTwo", "id", "15");
+products.forEach(System.out::println);
+```
+
+#### INFORMATIVO
+* De uma forma direta o metodo **getByInvertedRelation** trás o pai pelo filho, retornando mais de um
+elemento caso a direção não seja **1 para X**, o primeiro parametro é o nome da tabela, o segundo é
+o nome da coluna aonde ambos pai e filho estão correlacionados e o terceiro é o identificador da
+coluna.
 
 # METODO SEARCH
 O metodo search é o principal metodo de busca da api com o mesmo podendo
