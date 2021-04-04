@@ -22,12 +22,10 @@ public final class HCFUtil {
 	}
 	
 	public static <T> String getId(Class<T> classe) {
-		return Optional.ofNullable(Arrays.asList(classe.getDeclaredFields()).stream()
-		.filter(f -> {
-			for (Annotation a : f.getAnnotations())
-				return a instanceof Id;
-			return false;
-		}).collect(Collectors.toList()).get(0)).orElseThrow(() -> new NullPointerException("Undeclared id")).getName();
+		return Arrays.asList(classe.getDeclaredFields()).stream()
+		.filter(f -> Arrays.asList(f.getAnnotations()).stream().allMatch(a -> a instanceof Id))
+		.map(Field::getName)
+		.findFirst().orElseThrow(() -> new NullPointerException("Undeclared id"));
 	}
 	
 	public static void insertAnnotatedClasses() {
