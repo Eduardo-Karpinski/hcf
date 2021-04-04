@@ -89,6 +89,15 @@ List<Product> products = new HCFConnection<>(Product.class).all();
 products.forEach(System.out::println);
 ```
 
+## TRAZENDO TOTAL DE REGISTROS NA TABELA
+```
+Long totalRecords = new HCFConnection<>(Product.class).count();
+System.out.println(totalRecords);
+```
+
+#### INFORMATIVO
+* Existe outro metodo, **countDistinct** faz o mesmo que o count mas aplicando um **distinct** na pesquisa.
+
 ## PEGANDO PRIMEIRO OU ULTIMO REGISTRO
 ```
 HCFOrder order = new HCFOrder(false, "id", null, null);
