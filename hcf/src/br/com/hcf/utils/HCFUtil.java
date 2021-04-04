@@ -23,7 +23,7 @@ public final class HCFUtil {
 	
 	public static <T> String getId(Class<T> classe) {
 		return Arrays.asList(classe.getDeclaredFields()).stream()
-		.filter(f -> Arrays.asList(f.getAnnotations()).stream().allMatch(a -> a instanceof Id))
+		.filter(f -> Arrays.asList(f.getAnnotations()).stream().anyMatch(a -> a instanceof Id))
 		.map(Field::getName)
 		.findFirst().orElseThrow(() -> new NullPointerException("Undeclared id"));
 	}
