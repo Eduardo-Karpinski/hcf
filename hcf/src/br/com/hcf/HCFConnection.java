@@ -179,15 +179,15 @@ public final class HCFConnection<T, E> {
 	}
 	
 	@SuppressWarnings({ "unchecked" })
-	public Object bringAddition(List<String> campos, E... parameters) {
+	public Object bringAddition(List<String> Fields, E... parameters) {
 		try {
 			CriteriaBuilder builder = session.getCriteriaBuilder();
 			CriteriaQuery<Object[]> criteria = builder.createQuery(Object[].class);
 			Root<T> r = criteria.from(classe);
-			Selection<?>[] espressoes = new Selection<?>[campos.size()];
+			Selection<?>[] espressoes = new Selection<?>[Fields.size()];
 			applyPredicate(builder, r, parameters);
-			for (int i = 0; i < campos.size(); i++) {
-				espressoes[i] = builder.sum(r.get(campos.get(i)));
+			for (int i = 0; i < Fields.size(); i++) {
+				espressoes[i] = builder.sum(r.get(Fields.get(i)));
 			}
 			criteria.multiselect(espressoes).where(predicates.toArray(new Predicate[] {}));
 			TypedQuery<Object[]> query = session.createQuery(criteria);
@@ -202,13 +202,19 @@ public final class HCFConnection<T, E> {
 		}
 	}
 	
-	public List<Object[]> bringAdditionByGroup(String group, String Field) {
+	@SuppressWarnings("unchecked")
+	public List<Object[]> bringAdditionByGroup(String group, List<String> Fields, E... parameters) {
 		try {
 			CriteriaBuilder builder = session.getCriteriaBuilder();
 			CriteriaQuery<Object[]> criteria = builder.createQuery(Object[].class);
 			Root<T> r = criteria.from(classe);
+			Selection<?>[] espressoes = new Selection<?>[Fields.size()];
+			applyPredicate(builder, r, parameters);
+			for (int i = 0; i < Fields.size(); i++) {
+				espressoes[i] = builder.sum(r.get(Fields.get(i)));
+			}
 			criteria.groupBy(r.get(group));
-			criteria.multiselect(r.get(group), builder.sum(r.get(Field)));
+			criteria.multiselect(espressoes).where(predicates.toArray(new Predicate[] {}));
 			TypedQuery<Object[]> query = session.createQuery(criteria);
 			return query.getResultList();
 		} catch (Exception e) {
