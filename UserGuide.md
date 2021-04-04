@@ -89,6 +89,25 @@ List<Product> products = new HCFConnection<>(Product.class).all();
 products.forEach(System.out::println);
 ```
 
+## PEGANDO PRIMEIRO OU ULTIMO REGISTRO
+```
+HCFOrder order = new HCFOrder(false, "id", null, null);
+Product products = new HCFConnection<>(Product.class).getFirstOrLast(order);
+System.out.print(products);
+```
+
+#### INFORMATIVO
+* O objeto **HCFOrder** possui os campos asc, field, limit e offset sendo asc
+o orientador da procura, se o mesmo estiver true ele pegara o primeiro registro,
+se estiver false pegara o ultimo, ele ira fazer isso com base no field, ou seja,
+pegará com base na ultima inserção da coluna não do registro, o campo limit serve
+para limitar o tamanho do retorno, ou seja de a minha procura devolver 100 registros
+mas no meu order estiver com limit 10, ele ira trazer somente 10 registro, já o offset
+ira servir como intervalo, alterando o exemplo anterior do limit se nos agora quisermos
+pegar do 11 registro a frente ainda limitando 10 e 10 colocariamos limit ainda com 10
+mas o offset tambem com 10 assim o range que sera pego 11 a 21, podesse fazer uma procura
+so utilizando o objeto **HCFOrder** com o metodo **getByOrders**.
+
 # METODO SEARCH
 O metodo search é o principal metodo de busca da api com o mesmo podendo
 fazer inumeras requisições, sendo que existem duas implementações, uma que
