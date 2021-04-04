@@ -173,6 +173,12 @@ elemento caso a direção não seja **1 para X**, o primeiro parametro é o nome
 o nome da coluna aonde ambos pai e filho estão correlacionados e o terceiro é o identificador da
 coluna.
 
+## TRAZENDO REGISTRO POR RELACIONAMENTO
+```
+List<StyleOne> list = new HCFConnection<>(StyleOne.class).getRelations(Product.class, "StylesOne", 1);
+list.forEach(System.out::println);
+```
+
 # METODO SEARCH
 O metodo search é o principal metodo de busca da api com o mesmo podendo
 fazer inumeras requisições, sendo que existem duas implementações, uma que
