@@ -240,3 +240,48 @@ a cada 4 parametros passados forme um "search", sendo assim o **HCFOperator**
 tem como proposito fazer a operação **OR** ou **AND** com o "search" de cima,
 sendo obrigatorio passar **DEFAULT** nos primeiros 4 parametros ou no primeiro "search"
 pois não há nada acima para fazer uma operação.
+
+# UTILIDADE
+Talvez haja a necessidade de fazer a inicialização do HCF junto ao servidor web, para isso
+siga os exemplos abaixo.
+
+## ADICIONANDO LISTENER AO ARQUIVO WEB.XML
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+	id="WebApp_ID" version="4.0">
+	<display-name>your project name</display-name>
+	<welcome-file-list>
+		<welcome-file>index.html</welcome-file>
+	</welcome-file-list>
+	<listener>
+		<listener-class>br.com.your.package.Initializer</listener-class>
+	</listener>
+</web-app>
+```
+
+## CLASSE INICIALIZADORA
+```
+package br.com.your.package;
+
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+
+import br.com.hcf.HCFactory;
+
+public class Initializer implements ServletContextListener {
+
+	@Override
+	public void contextInitialized(ServletContextEvent sce) {
+		HCFactory.getFactory();
+	}
+
+	@Override
+	public void contextDestroyed(ServletContextEvent sce) {
+		HCFactory.shutdown();
+	}
+
+}
+```
