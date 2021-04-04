@@ -377,7 +377,55 @@ public final class HCFConnection<T, E> {
 			}
 		}
 	}
-
+	
+	@SuppressWarnings("unchecked")
+	public List<T> search(List<HCFOrder> orders, E... parameters) {
+		
+		if (parameters.length % 4 != 0) throw new IllegalArgumentException("Parameters is not a multiple of 4.");
+		
+		try {
+			CriteriaBuilder builder = session.getCriteriaBuilder();
+			CriteriaQuery<T> criteria = builder.createQuery(classe);
+			Root<T> r = criteria.from(classe);
+			order(orders, builder, criteria, r);
+			applyPredicate(builder, r, parameters);
+			criteria.select(r).where(predicates.toArray(new Predicate[] {}));
+			TypedQuery<T> query = limitResults(orders, criteria);
+			return query.getResultList();
+		} catch (NoResultException e) {
+			return null;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
+	}
+	
+	public List<T> search(List<HCFOrder> orders, List<HCFSearch> parameters) {
+		try {
+			CriteriaBuilder builder = session.getCriteriaBuilder();
+			CriteriaQuery<T> criteria = builder.createQuery(classe);
+			Root<T> r = criteria.from(classe);
+			order(orders, builder, criteria, r);
+			applyPredicate(builder, r, parameters);
+			criteria.select(r).where(predicates.toArray(new Predicate[] {}));
+			TypedQuery<T> query = limitResults(orders, criteria);
+			return query.getResultList();
+		} catch (NoResultException e) {
+			return null;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
+	}
+	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void applyPredicate(CriteriaBuilder builder, Root<T> r, List<HCFSearch> parameters) {
 		
@@ -503,54 +551,6 @@ public final class HCFConnection<T, E> {
 		        break;
 			}
 		});
-	}
-	
-	@SuppressWarnings("unchecked")
-	public List<T> search(List<HCFOrder> orders, E... parameters) {
-		
-		if (parameters.length % 4 != 0) throw new IllegalArgumentException("Parameters is not a multiple of 4.");
-		
-		try {
-			CriteriaBuilder builder = session.getCriteriaBuilder();
-			CriteriaQuery<T> criteria = builder.createQuery(classe);
-			Root<T> r = criteria.from(classe);
-			order(orders, builder, criteria, r);
-			applyPredicate(builder, r, parameters);
-			criteria.select(r).where(predicates.toArray(new Predicate[] {}));
-			TypedQuery<T> query = limitResults(orders, criteria);
-			return query.getResultList();
-		} catch (NoResultException e) {
-			return null;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		} finally {
-			if (session != null) {
-				session.close();
-			}
-		}
-	}
-	
-	public List<T> search(List<HCFOrder> orders, List<HCFSearch> parameters) {
-		try {
-			CriteriaBuilder builder = session.getCriteriaBuilder();
-			CriteriaQuery<T> criteria = builder.createQuery(classe);
-			Root<T> r = criteria.from(classe);
-			order(orders, builder, criteria, r);
-			applyPredicate(builder, r, parameters);
-			criteria.select(r).where(predicates.toArray(new Predicate[] {}));
-			TypedQuery<T> query = limitResults(orders, criteria);
-			return query.getResultList();
-		} catch (NoResultException e) {
-			return null;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		} finally {
-			if (session != null) {
-				session.close();
-			}
-		}
 	}
 	
 	private void applyOperator(CriteriaBuilder builder, HCFOperator conjuncao) {
