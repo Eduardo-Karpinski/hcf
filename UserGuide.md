@@ -129,7 +129,7 @@ List<Product> products = new HCFConnection<>(Product.class).search(null,
 products.forEach(System.out::println);
 ```
 
-## EXEMPLO 3
+## EXEMPLO 4
 ```
 // busca todos os registros entre as datas inseridas e todos que tenham 4 ou 5 no id
 LocalDateTime dateTimeOne = LocalDateTime.of(2021, 2, 21, 0, 0, 0);
