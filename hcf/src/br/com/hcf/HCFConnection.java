@@ -141,14 +141,16 @@ public final class HCFConnection<T, E> {
 		}
 	}
 	
-	public T getByInvertedRelation(String field, Object idChild) {
+	public List<T> getByInvertedRelation(String column, String field, Object id) {
 		try {
 			CriteriaBuilder builder = session.getCriteriaBuilder();
 			CriteriaQuery<T> criteria = builder.createQuery(classe);
 			Root<T> r = criteria.from(classe);
-			criteria.where(builder.equal(r.join(field).get("id"), idChild));
+			criteria.where(builder.equal(r.join(column).get(field), id));
 			TypedQuery<T> query = session.createQuery(criteria);
-			return query.getSingleResult();
+			return query.getResultList();
+		} catch (NoResultException e) {
+			return null;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
