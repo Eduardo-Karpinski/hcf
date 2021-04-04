@@ -1,7 +1,9 @@
 package br.com.hcf;
 
+import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -9,7 +11,10 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
 import javax.persistence.NoResultException;
+import javax.persistence.OneToMany;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -142,13 +147,13 @@ public final class HCFConnection<T, E> {
 		}
 	}
 	
-	public List<T> getRelations(Class<?> father, String column, String field, Object id) {
+	public List<T> getRelations(Class<?> father, String column, Object id) {
 		try {
 			CriteriaBuilder builder = session.getCriteriaBuilder();
 			CriteriaQuery<T> criteria = builder.createQuery(classe);
 			Root<?> r = criteria.from(father);
 			Join<?, T> join = r.join(column);
-			criteria.select(join).where(builder.equal(r.get(field), id));
+			criteria.select(join).where(builder.equal(r.get(HCFUtil.getId(father)), id));
 			TypedQuery<T> query = session.createQuery(criteria);
 			return query.getResultList();
 		} catch (NoResultException e) {
@@ -192,6 +197,8 @@ public final class HCFConnection<T, E> {
 			criteria.select(r).where(builder.equal(r.get(HCFUtil.getId(classe)), id));
 			TypedQuery<T> query = session.createQuery(criteria);
 			return query.getSingleResult();
+		} catch (NoResultException e) {
+			return null;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -407,7 +414,7 @@ public final class HCFConnection<T, E> {
 			}
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public List<T> search(List<HCFOrder> orders, E... parameters) {
 		
@@ -454,6 +461,48 @@ public final class HCFConnection<T, E> {
 				session.close();
 			}
 		}
+	}
+	
+	@SuppressWarnings("unused")
+	/**
+	 * in test phase
+	 * @param session
+	 * @param father
+	 */
+	private void insertRelationship(Session session, T father) {
+		
+		Class<?> fatherClass = father.getClass();
+		
+		Arrays.asList(fatherClass.getDeclaredFields()).stream()
+		.filter(f -> Arrays.asList(f.getAnnotations()).stream().anyMatch(a -> a instanceof OneToMany
+				|| a instanceof ManyToMany || a instanceof ManyToOne))
+		.map(Field::getName)
+		.forEach(table -> {
+			try {
+				String nameField = HCFUtil.getId(fatherClass);
+				
+				Field idField = fatherClass.getDeclaredField(nameField);
+				idField.setAccessible(true);
+				Object id = idField.get(father);
+				idField.setAccessible(false);
+				
+				Field lista = fatherClass.getDeclaredField(table);
+	            lista.setAccessible(true);
+	            
+	            CriteriaBuilder builder = session.getCriteriaBuilder();
+				CriteriaQuery<T> criteria = builder.createQuery(classe);
+				Root<?> r = criteria.from(fatherClass);
+				Join<?, T> join = r.join(table);
+				criteria.select(join).where(builder.equal(r.get(nameField), id));
+				TypedQuery<T> query = session.createQuery(criteria);
+	            
+	            lista.set(father, query.getResultList());
+	            lista.setAccessible(false);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
+		
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
