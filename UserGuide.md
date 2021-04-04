@@ -134,7 +134,7 @@ System.out.print(products);
 o orientador da procura, se o mesmo estiver true ele pegara o primeiro registro,
 se estiver false pegara o ultimo, ele ira fazer isso com base no field, ou seja,
 pegará com base na ultima inserção da coluna não do registro, o campo limit serve
-para limitar o tamanho do retorno, ou seja de a minha procura devolver 100 registros
+para limitar o tamanho do retorno, ou seja, se a minha procura devolver 100 registros
 mas no meu order estiver com limit 10, ele ira trazer somente 10 registro, já o offset
 ira servir como intervalo, alterando o exemplo anterior do limit se nos agora quisermos
 pegar do 11 registro a frente ainda limitando 10 e 10 colocariamos limit ainda com 10
