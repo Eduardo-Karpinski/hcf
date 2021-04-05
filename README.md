@@ -59,7 +59,7 @@ products.forEach(System.out::println);
 * [hibernate-orm](https://github.com/hibernate/hibernate-orm) - Framework usado.
 
 ## Authors
-* **Eduardo W. K. priester** - *desenvolvedor* - [github](https://github.com/Eduardo-Karpinski)
+* **Eduardo W. K. Priester** - *desenvolvedor* - [github](https://github.com/Eduardo-Karpinski)
 
 ## License
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details
