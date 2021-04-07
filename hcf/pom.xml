@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>br.com.hcf</groupId>
 	<artifactId>hcf-data</artifactId>
-	<version>3.0.0</version>
+	<version>3.1.4</version>
 	<name>Hibernate Connector Facilitator</name>
 	<description>DAO genérica para persistência de banco de dados.</description>
 	<url>https://github.com/Eduardo-Karpinski/hcf</url>
