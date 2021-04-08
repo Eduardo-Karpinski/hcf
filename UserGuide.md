@@ -90,13 +90,13 @@ algum erro ou fazer um **rollback** geral.
 ```
 Product product;
 product = new HCFConnection<>(Product.class).getById(1);
-System.out.println(product.toString());
+System.out.println(product);
 product = new HCFConnection<>(Product.class).getById("1");
-System.out.println(product.toString());
+System.out.println(product);
 product = new HCFConnection<>(Product.class).getById(1L);
-System.out.println(product.toString());
+System.out.println(product);
 product = new HCFConnection<>(Product.class).getById(1.0);
-System.out.println(product.toString());
+System.out.println(product);
 ```
 
 #### INFORMATIVO
@@ -161,7 +161,7 @@ o mesmo fazer um **group by** com a parametro passado.
 ## TRAZENDO REGISTRO POR RELACIONAMENTO INVERTIDO
 ```
 Product product = new HCFConnection<>(Product.class).getByInvertedRelation("StylesOne", "id", "15").get(0);
-System.out.println(product.toString());
+System.out.println(product);
 		
 List<Product> products = new HCFConnection<>(Product.class).getByInvertedRelation("StylesTwo", "id", "15");
 products.forEach(System.out::println);
