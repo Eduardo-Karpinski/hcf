@@ -56,7 +56,7 @@ List<Product> products = new HCFConnection<>(Product.class).all();
 products.forEach(System.out::println);
 ```
 ## Construído com
-* [Java] - Linguagem usada.
+* Java - Linguagem usada (compilado na versão 11).
 * [hibernate-orm](https://github.com/hibernate/hibernate-orm) - Framework usado.
 
 ## Authors
