@@ -509,7 +509,10 @@ public final class HCFConnection<T, E> {
 						criteria.select(join).where(builder.equal(r.get(nameField), id));
 						TypedQuery<T> query = session.createQuery(criteria);
 						
-			            lista.set(father, query.getResultList());
+			            List<T> resultList = query.getResultList();
+			            resultList.forEach(t -> getRelationshipByHCF(session, t));
+			            
+						lista.set(father, resultList);
 			            lista.setAccessible(false);
 					} catch (Exception e) {
 						e.printStackTrace();
