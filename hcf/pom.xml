@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>br.com.hcf</groupId>
 	<artifactId>hcf-data</artifactId>
-	<version>3.1.5</version>
+	<version>3.2.0</version>
 	<name>Hibernate Connector Facilitator</name>
 	<description>DAO genérica para persistência de banco de dados.</description>
 	<url>https://github.com/Eduardo-Karpinski/hcf</url>
@@ -22,6 +22,11 @@
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-core</artifactId>
 			<version>5.4.30.Final</version>
+		</dependency>
+		<dependency>
+			<groupId>org.reflections</groupId>
+			<artifactId>reflections</artifactId>
+			<version>0.9.12</version>
 		</dependency>
 	</dependencies>
 	<build>
