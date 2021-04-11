@@ -27,6 +27,12 @@
 			<groupId>org.reflections</groupId>
 			<artifactId>reflections</artifactId>
 			<version>0.9.12</version>
+			<exclusions>
+				<exclusion>
+				    <groupId>org.javassist</groupId>
+				    <artifactId>javassist</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 	<build>
