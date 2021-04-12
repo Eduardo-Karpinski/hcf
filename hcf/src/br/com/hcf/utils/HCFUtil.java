@@ -32,7 +32,8 @@ public final class HCFUtil {
 	public static void insertAnnotatedClasses() {
 		HCFactory.setAnnotatedClasses(Set.of(Package.getPackages()).stream()
 				.filter(new HCFUtil().checkPackages())
-				.map(Package::getName).map(name -> new Reflections(name))
+				.map(Package::getName)
+				.map(Reflections::new)
 				.map(HCFPackageValidator.classValid(reflections -> reflections.getTypesAnnotatedWith(Entity.class)))
 				.flatMap(Collection::stream)
 				.collect(Collectors.toSet()));
