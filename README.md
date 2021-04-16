@@ -12,7 +12,7 @@ contem as informações que o hibernate ira seguir para realizar a conexão com 
 <dependency>
   <groupId>br.com.hcf</groupId>
   <artifactId>hcf-data</artifactId>
-  <version>3.2.0</version>
+  <version>3.2.1</version>
 </dependency>
 ```
 **2º passo** deve-se criar a sessão **repositories** e adicinar o repositório do HCF
