@@ -13,11 +13,10 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 
 import org.reflections.Reflections;
-
-import br.com.hcf.HCFactory;
+import org.reflections.util.ClasspathHelper;
 
 public final class HCFUtil {
-
+	
 	private HCFUtil() {
 
 	}
@@ -29,32 +28,60 @@ public final class HCFUtil {
 				.findFirst().orElseThrow(() -> new NullPointerException("Undeclared id"));
 	}
 
-	public static void insertAnnotatedClasses() {
-		HCFactory.setAnnotatedClasses(Set.of(Package.getPackages()).stream()
-				.filter(new HCFUtil().checkPackages())
+	public static Set<Class<?>> getAnnotatedClasses() {
+		ClassLoader[] classLoaders = new ClassLoader[2];
+		classLoaders[0] = ClasspathHelper.contextClassLoader();
+		classLoaders[1] = ClasspathHelper.staticClassLoader();
+		return Set.of(Package.getPackages()).stream()
 				.map(Package::getName)
-				.map(Reflections::new)
-				.map(HCFPackageValidator.classValid(reflections -> reflections.getTypesAnnotatedWith(Entity.class)))
+				.filter(checkPackageName())
+				.map(name -> new Reflections(name, ClasspathHelper.forClassLoader(classLoaders)))
+				.map(HCFValidator.classValid(reflections -> reflections.getTypesAnnotatedWith(Entity.class)))
 				.flatMap(Collection::stream)
-				.collect(Collectors.toSet()));
+				.collect(Collectors.toSet());
 	}
 	
 	/**
-	 * org.jboss.security.acl.ACLImpl is an entity
-	 * org.jboss.security.acl.ACLEntryImpl is an entity
+	 * org.jboss.security.acl.ACLImpl and
+	 * org.jboss.security.acl.ACLEntryImpl are an entity,
+	 * the rest is unnecessary for reading.
 	 */
-	private Predicate<? super Package> checkPackages() {
-		return p -> !p.getName().startsWith("org.jboss");
+	private static Predicate<? super String> checkPackageName() {
+		return p -> !p.startsWith("br.com.hcf") &&
+					!p.startsWith("com.sun") &&
+					!p.startsWith("com.mysql") &&
+					!p.startsWith("io.jaegertracing") &&
+					!p.startsWith("io.smallrye") &&
+					!p.startsWith("io.undertow") &&
+					!p.startsWith("java") &&
+					!p.startsWith("jakarta") &&
+					!p.startsWith("jdk") &&
+					!p.startsWith("net.bytebuddy") &&
+					!p.startsWith("org.apache") &&
+					!p.startsWith("org.eclipse") &&
+					!p.startsWith("org.glassfish") &&
+					!p.startsWith("org.hibernate") &&
+					!p.startsWith("org.ietf") &&
+					!p.startsWith("org.jberet") &&
+					!p.startsWith("org.jcp") &&
+					!p.startsWith("org.jboss") &&
+					!p.startsWith("org.reflections") &&
+					!p.startsWith("org.picketbox") &&
+					!p.startsWith("org.slf4j") &&
+					!p.startsWith("org.wildfly") &&
+					!p.startsWith("org.w3c.dom") &&
+					!p.startsWith("org.xml") &&
+					!p.startsWith("sun");	
 	}
 
 }
 
 @FunctionalInterface 
-interface HCFPackageValidator<I, O, T extends Throwable> {
+interface HCFValidator<I, O, T extends Throwable> {
 
-	Set<Class<?>> apply(I t) throws T;
+	O apply(I t) throws T;
 
-	static <I, O, T extends Throwable> Function<I, Set<Class<?>>> classValid(HCFPackageValidator<I, Set<Class<?>>, T> validator) {
+	static <I, O, T extends Throwable> Function<I, Set<Class<?>>> classValid(HCFValidator<I, Set<Class<?>>, T> validator) {
 		return c -> {
 			try {
 				return validator.apply(c);
