@@ -1,10 +1,9 @@
 package br.com.hcf;
 
 import java.io.File;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+
+import javax.persistence.EntityManager;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.MetadataSources;
@@ -17,18 +16,15 @@ import br.com.hcf.utils.HCFUtil;
 public final class HCFactory {
 
 	private static SessionFactory sessionFactory = null;
-	private static Set<Class<?>> classes = new HashSet<>();
 	private static String propertiesPath = "hibernate.properties";
 	private static boolean internal = true;
-
+	
 	private HCFactory() {
 
 	}
 
 	public static SessionFactory getFactory() {
 		if (sessionFactory == null) {
-			HCFUtil.insertAnnotatedClasses();
-
 			StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder();
 			if (internal) {
 				registryBuilder.loadProperties(propertiesPath);
@@ -38,17 +34,17 @@ public final class HCFactory {
 			StandardServiceRegistry registry = registryBuilder.build();
 			try {
 				MetadataSources metadataSources = new MetadataSources(registry);
-				classes = classes.stream().distinct().collect(Collectors.toSet());
-				classes.forEach(c -> {
+				
+				HCFUtil.getAnnotatedClasses().forEach(c -> {
 					metadataSources.addAnnotatedClass(c);
 				});
+				
 				sessionFactory = metadataSources.buildMetadata().buildSessionFactory();
 			} catch (Exception e) {
 				e.printStackTrace();
 				StandardServiceRegistryBuilder.destroy(registry);
 			}
 		}
-
 		return sessionFactory;
 	}
 
@@ -59,11 +55,12 @@ public final class HCFactory {
 
 	public static SessionFactory getNewFactory(Map<String, String> properties, boolean replaceCurrent) {
 		Configuration conf = new Configuration();
+		
 		properties.forEach((k, v) -> {
 			conf.setProperty(k, v);
 		});
-		HCFUtil.insertAnnotatedClasses();
-		classes.stream().distinct().forEach(c -> {
+		
+		HCFUtil.getAnnotatedClasses().forEach(c -> {
 			conf.addAnnotatedClass(c);
 		});
 		
@@ -78,20 +75,18 @@ public final class HCFactory {
 		return newFactory;
 	}
 
-	public static void setAnnotatedClasses(Set<Class<?>> annotedClasses) {
-		classes.addAll(annotedClasses);
-	}
-
-	public static void setAnnotatedClasses(Class<?> c) {
-		classes.add(c);
-	}
-
 	public static void getAnnotatedClasses() {
-		classes.stream().distinct().forEach(System.out::println);
-	}
-
-	public static void clearAnnotatedClasses() {
-		classes = new HashSet<>();
+		EntityManager em = null;
+		try {
+			em = sessionFactory.createEntityManager();
+			em.getMetamodel().getEntities().forEach(System.out::println);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (em != null) {
+				em.close();
+			}
+		}
 	}
 
 	public static void shutdown() {
@@ -101,8 +96,6 @@ public final class HCFactory {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-		} finally {
-			clearAnnotatedClasses();
 		}
 	}
 
