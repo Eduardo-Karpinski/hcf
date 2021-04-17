@@ -7,7 +7,7 @@
 	<artifactId>hcf-data</artifactId>
 	<version>3.2.1</version>
 	<name>Hibernate Connector Facilitator</name>
-	<description>DAO genérica para persistência de banco de dados.</description>
+	<description>Generic DAO for database persistence.</description>
 	<url>https://github.com/Eduardo-Karpinski/hcf</url>
 	<developers>
 		<developer>
