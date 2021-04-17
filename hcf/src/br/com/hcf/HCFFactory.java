@@ -13,13 +13,13 @@ import org.hibernate.cfg.Configuration;
 
 import br.com.hcf.utils.HCFUtil;
 
-public final class HCFactory {
+public final class HCFFactory {
 
 	private static SessionFactory sessionFactory = null;
 	private static String propertiesPath = "hibernate.properties";
 	private static boolean internal = true;
 	
-	private HCFactory() {
+	private HCFFactory() {
 
 	}
 
