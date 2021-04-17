@@ -1,4 +1,4 @@
-# USER GUIDE
+# GUIDE
 Guia para as principais ações do HCF
 
 # CLASSE USADA PARA O GUIA
