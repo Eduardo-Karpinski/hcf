@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,7 +18,9 @@ import javax.persistence.NoResultException;
 import javax.persistence.OneToMany;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaDelete;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.CriteriaUpdate;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Path;
@@ -44,17 +47,22 @@ public final class HCFConnection<T, E> {
 
 	public HCFConnection(Class<T> persistentClass) {
 		classe = Optional.ofNullable(persistentClass).orElseThrow(() -> new NullPointerException("PersistentClass is null"));
-		session = HCFactory.getFactory().openSession();
+		session = HCFFactory.getFactory().openSession();
 	}
 	
 	public HCFConnection(Class<T> persistentClass, Connection connection) {
 		classe = Optional.ofNullable(persistentClass).orElseThrow(() -> new NullPointerException("PersistentClass is null"));
-		session = HCFactory.getFactory().withOptions().connection(Optional.ofNullable(connection).orElseThrow(() -> new NullPointerException("Connection is null"))).openSession();
+		session = HCFFactory.getFactory().withOptions().connection(Optional.ofNullable(connection).orElseThrow(() -> new NullPointerException("Connection is null"))).openSession();
 	}
 	
 	public HCFConnection(Class<T> persistentClass, SessionFactory sessionFactory) {
 		classe = Optional.ofNullable(persistentClass).orElseThrow(() -> new NullPointerException("PersistentClass is null"));
 		session = Optional.ofNullable(sessionFactory).orElseThrow(() -> new NullPointerException("SessionFactory is null")).openSession();
+	}
+	
+	public HCFConnection(Class<T> persistentClass, Session session) {
+		classe = Optional.ofNullable(persistentClass).orElseThrow(() -> new NullPointerException("PersistentClass is null"));
+		this.session = Optional.ofNullable(session).orElseThrow(() -> new NullPointerException("Session is null"));
 	}
 	
 	public void save(T entidade) {
@@ -88,7 +96,7 @@ public final class HCFConnection<T, E> {
 			}
 			e.printStackTrace();
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen()) {
 				session.close();
 			}
 		}
@@ -126,7 +134,85 @@ public final class HCFConnection<T, E> {
 			}
 			e.printStackTrace();
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
+				session.close();
+			}
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public int deleteByParameters(E... parameters) {
+		if (parameters.length % 4 != 0) throw new IllegalArgumentException("Parameters is not a multiple of 4.");
+		try {
+			CriteriaBuilder builder  = session.getCriteriaBuilder();
+			CriteriaDelete<T> criteria = builder.createCriteriaDelete(classe);
+			Root<T> r = criteria.from(classe);
+			applyPredicate(builder, r, parameters);
+			criteria.where(predicates.toArray(new Predicate[] {}));
+			return session.createQuery(criteria).executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return -1;
+		} finally {
+			if (session != null && session.isOpen())  {
+				session.close();
+			}
+		}
+	}
+	
+	public int deleteByParameters(List<HCFSearch> hcfSearchs) {
+		try {
+			CriteriaBuilder builder  = session.getCriteriaBuilder();
+			CriteriaDelete<T> criteria = builder.createCriteriaDelete(classe);
+			Root<T> r = criteria.from(classe);
+			applyPredicate(builder, r, hcfSearchs);
+			criteria.where(predicates.toArray(new Predicate[] {}));
+			return session.createQuery(criteria).executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return -1;
+		} finally {
+			if (session != null && session.isOpen())  {
+				session.close();
+			}
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public int updateByParameters(Map<String, Object> values, E... parameters) {
+		if (parameters.length % 4 != 0) throw new IllegalArgumentException("Parameters is not a multiple of 4.");
+		try {
+			CriteriaBuilder builder  = session.getCriteriaBuilder();
+			CriteriaUpdate<T> criteria = builder.createCriteriaUpdate(classe);
+			Root<T> r = criteria.from(classe);
+			applyPredicate(builder, r, parameters);
+			values.forEach((attributeName, value) -> criteria.set(attributeName, value));
+			criteria.where(predicates.toArray(new Predicate[] {}));
+			return session.createQuery(criteria).executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return -1;
+		} finally {
+			if (session != null && session.isOpen())  {
+				session.close();
+			}
+		}
+	}
+	
+	public int updateByParameters(Map<String, Object> values, List<HCFSearch> hcfSearchs) {
+		try {
+			CriteriaBuilder builder  = session.getCriteriaBuilder();
+			CriteriaUpdate<T> criteria = builder.createCriteriaUpdate(classe);
+			Root<T> r = criteria.from(classe);
+			applyPredicate(builder, r, hcfSearchs);
+			values.forEach((attributeName, value) -> criteria.set(attributeName, value));
+			criteria.where(predicates.toArray(new Predicate[] {}));
+			return session.createQuery(criteria).executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return -1;
+		} finally {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -144,7 +230,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -167,7 +253,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -189,7 +275,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -212,13 +298,13 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
 	}
 	
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings("unchecked")
 	public Object bringAddition(List<String> Fields, E... parameters) {
 		try {
 			CriteriaBuilder builder = session.getCriteriaBuilder();
@@ -236,7 +322,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -261,7 +347,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -290,7 +376,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -310,7 +396,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -321,7 +407,7 @@ public final class HCFConnection<T, E> {
 		Transaction tx = null;
 		Session session = null;
 		try {
-			session = HCFactory.getFactory().openSession();
+			session = HCFFactory.getFactory().openSession();
 			tx = session.beginTransaction();
 			session.createNativeQuery(sql).executeUpdate();
 			tx.commit();
@@ -331,7 +417,7 @@ public final class HCFConnection<T, E> {
 			}
 			e.printStackTrace();
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -340,14 +426,14 @@ public final class HCFConnection<T, E> {
 	public List<T> getObjectBySQL(String sql) {
 		Session session = null;
 		try {
-			session = HCFactory.getFactory().openSession();
+			session = HCFFactory.getFactory().openSession();
 			NativeQuery<T> nativeQuery = session.createNativeQuery(sql,classe);
 			return nativeQuery.getResultList();
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -356,13 +442,13 @@ public final class HCFConnection<T, E> {
 	public static List<?> getElementsBySQL(String sql) {
 		Session session = null;
 		try {
-			session = HCFactory.getFactory().openSession();
+			session = HCFFactory.getFactory().openSession();
 			return session.createNativeQuery(sql).getResultList();
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -379,7 +465,7 @@ public final class HCFConnection<T, E> {
 		} catch (Exception e) {
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -396,7 +482,7 @@ public final class HCFConnection<T, E> {
 		} catch (Exception e) {
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -424,7 +510,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -452,7 +538,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
@@ -476,7 +562,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null) {
+			if (session != null && session.isOpen())  {
 				session.close();
 			}
 		}
