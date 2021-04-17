@@ -13,7 +13,6 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 
 import org.reflections.Reflections;
-import org.reflections.util.ClasspathHelper;
 
 public final class HCFUtil {
 	
@@ -29,13 +28,10 @@ public final class HCFUtil {
 	}
 
 	public static Set<Class<?>> getAnnotatedClasses() {
-		ClassLoader[] classLoaders = new ClassLoader[2];
-		classLoaders[0] = ClasspathHelper.contextClassLoader();
-		classLoaders[1] = ClasspathHelper.staticClassLoader();
 		return Set.of(Package.getPackages()).stream()
 				.map(Package::getName)
 				.filter(checkPackageName())
-				.map(name -> new Reflections(name, ClasspathHelper.forClassLoader(classLoaders)))
+				.map(Reflections::new)
 				.map(HCFValidator.classValid(reflections -> reflections.getTypesAnnotatedWith(Entity.class)))
 				.flatMap(Collection::stream)
 				.collect(Collectors.toSet());
@@ -48,6 +44,8 @@ public final class HCFUtil {
 	 */
 	private static Predicate<? super String> checkPackageName() {
 		return p -> !p.startsWith("br.com.hcf") &&
+					!p.startsWith("ch.qos") &&
+					!p.startsWith("com.fasterxml") &&
 					!p.startsWith("com.sun") &&
 					!p.startsWith("com.mysql") &&
 					!p.startsWith("io.jaegertracing") &&
@@ -68,10 +66,12 @@ public final class HCFUtil {
 					!p.startsWith("org.reflections") &&
 					!p.startsWith("org.picketbox") &&
 					!p.startsWith("org.slf4j") &&
+					!p.startsWith("org.springframework") &&
 					!p.startsWith("org.wildfly") &&
 					!p.startsWith("org.w3c.dom") &&
 					!p.startsWith("org.xml") &&
-					!p.startsWith("sun");	
+					!p.startsWith("org.yaml") &&
+					!p.startsWith("sun");
 	}
 
 }
