@@ -1,13 +1,7 @@
-# HCF
-DAO genérica para persistência de banco de dados.
+# About
+HCF is a generic DAO for database persistence.
 
-## Começando
-Para começar a desenvolver usando o HCF você precisara importar a dependencia do mesmo
-via jar ou maven, tambem precisara adicionar em seu projeto o arquivo hibernate.properties que
-contem as informações que o hibernate ira seguir para realizar a conexão com o banco de dados.
-
-## Pré-requisitos
-**1º passo** deve-se importar o HCF
+## Dependency Management
 ```
 <dependency>
   <groupId>br.com.hcf</groupId>
@@ -15,7 +9,6 @@ contem as informações que o hibernate ira seguir para realizar a conexão com 
   <version>3.2.1</version>
 </dependency>
 ```
-**2º passo** deve-se criar a sessão **repositories** e adicinar o repositório do HCF
 ```
 <repositories>
   <repository>
@@ -24,10 +17,10 @@ contem as informações que o hibernate ira seguir para realizar a conexão com 
   </repository>
 </repositories>
 ```
-**3º passo (opcional/recomendado)** deve-se criar o arquivo **hibernate.properties** no projeto
+
+## hibernate.properties (Optional/recommended)
 ```
-# Arquivo exemplo usando banco de dados mysql
-# Caso queira que as propriedades do c3p0 funcione deve-se importar sua respectiva dependencia
+# example 
 
 # hibernate
 hibernate.connection.username=user
@@ -47,21 +40,20 @@ hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
 hibernate.enable_lazy_load_no_trans=true
 ```
 
-## Executando os testes
-Para testar a api basta executar uma chamada simples do HCF e se tudo estiver
-configurado de forma correta o teste sera um sucesso, lembrando que a class deve estar
-com a anotação Entity implementada.
+## How to test HCF 
 ```
+// Product is a entity
 List<Product> products = new HCFConnection<>(Product.class).all();
 products.forEach(System.out::println);
 ```
-## Construído com
-* Java - Linguagem usada (compilado na versão 11).
-* [hibernate-orm](https://github.com/hibernate/hibernate-orm) - Framework usado.
-* [reflections](https://github.com/ronmamo/reflections) - Framework usado.
+
+## Built with
+* Java - Language used (compiled in version 11).
+* [hibernate-orm](https://github.com/hibernate/hibernate-orm) - Framework used.
+* [reflections](https://github.com/ronmamo/reflections) - Framework used.
 
 ## Authors
-* **Eduardo W. K. Priester** - *desenvolvedor* - [github](https://github.com/Eduardo-Karpinski)
+* **Eduardo W. K. Priester** - *developer* - [github](https://github.com/Eduardo-Karpinski)
 
 ## License
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details
