@@ -18,9 +18,10 @@ HCF is a generic DAO for database persistence.
 </repositories>
 ```
 
-## hibernate.properties (Optional/recommended)
+## hibernate.properties (optional/recommended)
 ```
-# example 
+# example
+# equivalent to application.properties 
 
 # hibernate
 hibernate.connection.username=user
