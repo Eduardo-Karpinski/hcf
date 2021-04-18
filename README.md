@@ -33,7 +33,7 @@ hibernate.c3p0.min_size=5
 hibernate.c3p0.max_size=10
 hibernate.c3p0.timeout=3000
 hibernate.c3p0.max_statements=30
-# outros
+# others
 hibernate.show_sql=false
 hibernate.format_sql=false
 hibernate.hbm2ddl.auto=update
