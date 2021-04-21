@@ -4,7 +4,6 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -30,13 +29,10 @@ public final class HCFUtil {
 	}
 	
 	private static <T> Supplier<? extends String> getFieldByFather(Class<? super T> superclass) {
-		Objects.requireNonNull(superclass, "Super class is null");
-		return () -> {
-			return Arrays.asList(superclass.getDeclaredFields()).stream()
-			.filter(f -> f.getAnnotation(Id.class) != null)
-			.map(Field::getName)
-			.findFirst().orElseThrow(() -> new NullPointerException("Undeclared id"));
-		};
+		return () -> Arrays.asList(superclass.getDeclaredFields()).stream()
+				.filter(f -> f.getAnnotation(Id.class) != null)
+				.map(Field::getName)
+				.findFirst().orElseThrow(() -> new NullPointerException("Undeclared id"));
 	}
 
 	public static Set<Class<?>> getAnnotatedClasses() {
@@ -70,6 +66,7 @@ public final class HCFUtil {
 					!p.startsWith("org.apache") &&
 					!p.startsWith("org.eclipse") &&
 					!p.startsWith("org.glassfish") &&
+					!p.startsWith("org.graalvm") &&
 					!p.startsWith("org.hibernate") &&
 					!p.startsWith("org.ietf") &&
 					!p.startsWith("org.jberet") &&
