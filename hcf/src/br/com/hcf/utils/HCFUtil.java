@@ -4,9 +4,11 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.persistence.Entity;
@@ -24,7 +26,17 @@ public final class HCFUtil {
 		return Arrays.asList(classe.getDeclaredFields()).stream()
 				.filter(f -> f.getAnnotation(Id.class) != null)
 				.map(Field::getName)
-				.findFirst().orElseThrow(() -> new NullPointerException("Undeclared id"));
+				.findFirst().orElseGet(getFieldByFather(classe.getSuperclass()));
+	}
+	
+	private static <T> Supplier<? extends String> getFieldByFather(Class<? super T> superclass) {
+		Objects.requireNonNull(superclass, "Super class is null");
+		return () -> {
+			return Arrays.asList(superclass.getDeclaredFields()).stream()
+			.filter(f -> f.getAnnotation(Id.class) != null)
+			.map(Field::getName)
+			.findFirst().orElseThrow(() -> new NullPointerException("Undeclared id"));
+		};
 	}
 
 	public static Set<Class<?>> getAnnotatedClasses() {
