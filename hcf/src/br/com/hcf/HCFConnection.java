@@ -74,7 +74,7 @@ public final class HCFConnection<T, E> {
 		AtomicInteger cont = new AtomicInteger(0);
 		try {
 			tx = session.beginTransaction();
-			entidade.stream().forEach(e -> {
+			entidade.forEach(e -> {
 				session.saveOrUpdate(e);
 				if (cont.incrementAndGet() % 20 == 0) {
 					session.flush();
@@ -111,7 +111,7 @@ public final class HCFConnection<T, E> {
 		AtomicInteger cont = new AtomicInteger(0);
 		try {
 			tx = session.beginTransaction();
-			entidade.stream().forEach(e -> {
+			entidade.forEach(e -> {
 				session.delete(e);
 				if (cont.incrementAndGet() % 20 == 0) {
 					session.flush();
@@ -612,8 +612,7 @@ public final class HCFConnection<T, E> {
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void applyPredicate(CriteriaBuilder builder, Root<T> r, List<HCFSearch> parameters) {
-		
-		parameters.forEach(i ->{
+		parameters.forEach(i -> {
 			
 			Path path = r.get(i.getField());
 			
@@ -676,7 +675,7 @@ public final class HCFConnection<T, E> {
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void applyPredicate(CriteriaBuilder builder, Root<T> r, E... parameters) {
-		IntStream.iterate(3, i -> i + 4).limit(parameters.length / 4).forEach(i ->{
+		IntStream.iterate(3, i -> i + 4).limit(parameters.length / 4).forEach(i -> {
 			
 			Path path = r.get(parameters[i - 3].toString());
 			
@@ -738,33 +737,38 @@ public final class HCFConnection<T, E> {
 	}
 	
 	private void applyOperator(CriteriaBuilder builder, HCFOperator conjuncao) {
-		switch (conjuncao) {
-		case OR:
-			predicates.add(builder.or(predicates.get(predicates.size() -2), predicates.get(predicates.size() - 1)));
-			predicates.remove(predicates.size() - 3);
-			predicates.remove(predicates.size() - 2);
-			break;
-		case AND:
-			predicates.add(builder.and(predicates.get(predicates.size() -2), predicates.get(predicates.size() - 1)));
-			predicates.remove(predicates.size() - 3);
-			predicates.remove(predicates.size() - 2);
-			break;
-		case DEFAULT:
-			break;
+		try {
+			switch (conjuncao) {
+			case OR:
+				predicates.add(builder.or(predicates.get(predicates.size() - 2), predicates.get(predicates.size() - 1)));
+				predicates.remove(predicates.size() - 3);
+				predicates.remove(predicates.size() - 2);
+				break;
+			case AND:
+				predicates.add(builder.and(predicates.get(predicates.size() - 2), predicates.get(predicates.size() - 1)));
+				predicates.remove(predicates.size() - 3);
+				predicates.remove(predicates.size() - 2);
+				break;
+			case DEFAULT:
+				break;
+			}
+		} catch (IndexOutOfBoundsException ignore) {
+			// Are probably iterating a collection and it was not possible to use DEFAULT
 		}
 	}
 
 	private void order(List<HCFOrder> orders, CriteriaBuilder builder, CriteriaQuery<T> criteria, Root<T> r) {
 		if (orders == null) return;
 		List<Order> persistenceOrders = new ArrayList<>();
-		orders.stream().filter(o -> o.getAsc() != null && o.getField() != null)
-		.forEach(o -> {
-			if (o.getAsc()) {
-				persistenceOrders.add(builder.asc(r.get(o.getField())));
-			} else {
-				persistenceOrders.add(builder.desc(r.get(o.getField())));
-			}
-		});
+		orders.stream()
+			.filter(o -> o.getAsc() != null && o.getField() != null)
+			.forEach(o -> {
+				if (o.getAsc()) {
+					persistenceOrders.add(builder.asc(r.get(o.getField())));
+				} else {
+					persistenceOrders.add(builder.desc(r.get(o.getField())));
+				}
+			});
 		criteria.orderBy(persistenceOrders);
 	}
 	
