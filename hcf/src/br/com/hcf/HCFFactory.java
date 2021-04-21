@@ -2,6 +2,8 @@ package br.com.hcf;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 import javax.persistence.EntityManager;
 
@@ -34,11 +36,7 @@ public final class HCFFactory {
 			StandardServiceRegistry registry = registryBuilder.build();
 			try {
 				MetadataSources metadataSources = new MetadataSources(registry);
-				
-				HCFUtil.getAnnotatedClasses().forEach(c -> {
-					metadataSources.addAnnotatedClass(c);
-				});
-				
+				HCFUtil.getAnnotatedClasses().forEach(c -> metadataSources.addAnnotatedClass(c));
 				sessionFactory = metadataSources.buildMetadata().buildSessionFactory();
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -52,17 +50,38 @@ public final class HCFFactory {
 		propertiesPath = pathname;
 		internal = isInternal;
 	}
+	
+	public static SessionFactory getNewFactory(Map<String, String> propertiesInMap,
+			String propertiesPath,
+			boolean isFile,
+			boolean replaceCurrent,
+			boolean useHCFClassCollector,
+			Package[] packages,
+			Set<Class<?>> classes) {
 
-	public static SessionFactory getNewFactory(Map<String, String> properties, boolean replaceCurrent) {
 		Configuration conf = new Configuration();
 		
-		properties.forEach((k, v) -> {
-			conf.setProperty(k, v);
-		});
-		
-		HCFUtil.getAnnotatedClasses().forEach(c -> {
-			conf.addAnnotatedClass(c);
-		});
+		if (propertiesInMap != null) {
+			propertiesInMap.forEach((k, v) -> conf.setProperty(k, v));
+		} else {
+			StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder();
+			Properties properties;
+			if (isFile) {
+				properties = registryBuilder.getConfigLoader().loadProperties(new File(propertiesPath));
+			} else {
+				properties = registryBuilder.getConfigLoader().loadProperties(propertiesPath);
+			}
+			properties.forEach((k, v) -> conf.setProperty(k.toString(), v.toString()));
+		}
+
+		if (useHCFClassCollector) {
+			HCFUtil.getAnnotatedClasses().forEach(c -> conf.addAnnotatedClass(c));
+		} else {
+			for (Package p : packages) {
+				conf.addPackage(p.getName());
+			}
+			classes.forEach(c -> conf.addAnnotatedClass(c));
+		}
 		
 		SessionFactory newFactory = conf.buildSessionFactory();
 		
@@ -72,7 +91,7 @@ public final class HCFFactory {
 			return sessionFactory;
 		}
 		
-		return newFactory;
+		return sessionFactory;
 	}
 
 	public static void getAnnotatedClasses() {
@@ -91,7 +110,7 @@ public final class HCFFactory {
 
 	public static void shutdown() {
 		try {
-			if (sessionFactory != null) {
+			if (sessionFactory != null && sessionFactory.isOpen()) {
 				sessionFactory.close();
 			}
 		} catch (Exception e) {
