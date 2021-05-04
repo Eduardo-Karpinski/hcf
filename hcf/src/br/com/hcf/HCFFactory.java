@@ -2,6 +2,7 @@ package br.com.hcf;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
@@ -77,10 +78,12 @@ public final class HCFFactory {
 		if (useHCFClassCollector) {
 			HCFUtil.getAnnotatedClasses().forEach(c -> conf.addAnnotatedClass(c));
 		} else {
-			for (Package p : packages) {
-				conf.addPackage(p.getName());
+			if (packages != null) {
+				for (Package p : packages) {
+					conf.addPackage(p.getName());
+				}
 			}
-			classes.forEach(c -> conf.addAnnotatedClass(c));
+			Optional.ofNullable(classes).ifPresent(classesOptional -> classesOptional.forEach(c -> conf.addAnnotatedClass(c)));
 		}
 		
 		SessionFactory newFactory = conf.buildSessionFactory();
@@ -91,7 +94,7 @@ public final class HCFFactory {
 			return sessionFactory;
 		}
 		
-		return sessionFactory;
+		return newFactory;
 	}
 
 	public static void getAnnotatedClasses() {
