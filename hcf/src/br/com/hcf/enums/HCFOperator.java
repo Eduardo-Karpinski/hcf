@@ -1,7 +1,7 @@
 package br.com.hcf.enums;
 
 public enum HCFOperator {
-	DEFAULT(),
+	OR(),
 	AND(),
-	OR();
+	DEFAULT();
 }
