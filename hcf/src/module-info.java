@@ -1,7 +1,5 @@
 @SuppressWarnings("module")
 module hibernateConnectorFacilitator {
-	opens br.com.hcf to org.hibernate.orm.core;
-	
 	exports br.com.hcf;
 	exports br.com.hcf.enums;
 	exports br.com.hcf.annotations;
