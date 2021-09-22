@@ -28,7 +28,7 @@ hibernate.connection.username=user
 hibernate.connection.password=pass
 hibernate.connection.driver_class=com.mysql.cj.jdbc.Driver
 hibernate.connection.url=jdbc:mysql://localhost:3306/db?useTimezone=true&serverTimezone=America/Sao_Paulo
-# c3p0
+# c3p0, hibernate-c3p0 dependency required
 hibernate.c3p0.min_size=5
 hibernate.c3p0.max_size=10
 hibernate.c3p0.timeout=3000
