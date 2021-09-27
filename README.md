@@ -1,5 +1,5 @@
 # About
-HCF is a generic DAO for database persistence.
+HCF is a generic DAO for database persistence. [![CODE QUALITY](https://www.code-inspector.com/project/29204/score/svg)](https://frontend.code-inspector.com/public/project/29204/hcf/dashboard)
 
 ## Dependency Management
 ```
