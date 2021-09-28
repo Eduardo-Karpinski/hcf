@@ -1,5 +1,5 @@
 # About
-[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/Eduardo-Karpinski/hcf.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Eduardo-Karpinski/hcf/context:java)
+[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/Eduardo-Karpinski/hcf.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Eduardo-Karpinski/hcf/context:java) 
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/Eduardo-Karpinski/hcf.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Eduardo-Karpinski/hcf/alerts/)<br/>
 HCF is a generic DAO for database persistence.
 
