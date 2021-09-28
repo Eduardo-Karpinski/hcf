@@ -18,12 +18,13 @@ import br.com.hcf.utils.HCFUtil;
 
 public final class HCFFactory {
 
-	private static SessionFactory sessionFactory = null;
-	private static String propertiesPath = "hibernate.properties";
 	private static boolean internal = true;
+	private static SessionFactory sessionFactory = null;
+	private final static HCFFactory instance = new HCFFactory();
+	private static String propertiesPath = "hibernate.properties";
 	
 	static {
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> new HCFFactory().shutdown()));
 		
 		System.err.println("################################################");
 		System.err.println("Hibernate Connection facilitator - Version 3.4.1");
@@ -32,10 +33,14 @@ public final class HCFFactory {
 	}
 	
 	private HCFFactory() {
-
+		
+	}
+	
+	public static HCFFactory getInstance() {
+		return instance;
 	}
 
-	public static SessionFactory getFactory() {
+	public SessionFactory getFactory() {
 		if (sessionFactory == null || sessionFactory.isClosed()) {
 			StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder();
 			if (internal) {
@@ -57,12 +62,12 @@ public final class HCFFactory {
 		return sessionFactory;
 	}
 
-	public static void setDirectoryProperties(String pathname, boolean isInternal) {
+	public void setDirectoryProperties(String pathname, boolean isInternal) {
 		propertiesPath = pathname;
 		internal = isInternal;
 	}
 	
-	public static SessionFactory getNewFactory(Map<String, String> propertiesInMap,
+	public SessionFactory getNewFactory(Map<String, String> propertiesInMap,
 			String propertiesPath,
 			boolean isFile,
 			boolean replaceCurrent,
@@ -107,7 +112,7 @@ public final class HCFFactory {
 		return newFactory;
 	}
 
-	public static void getAnnotatedClasses() {
+	public void getAnnotatedClasses() {
 		EntityManager em = null;
 		try {
 			em = sessionFactory.createEntityManager();
@@ -121,15 +126,13 @@ public final class HCFFactory {
 		}
 	}
 
-	public static void shutdown() {
+	public void shutdown() {
 		try {
 			if (sessionFactory != null && sessionFactory.isOpen()) {
 				sessionFactory.close();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-		} finally {
-			sessionFactory = null;
 		}
 	}
 

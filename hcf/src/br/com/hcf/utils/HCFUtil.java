@@ -45,7 +45,7 @@ public final class HCFUtil {
 	 * the rest is unnecessary for reading.
 	 */
 	private static boolean checkPackageName(String name) {
-		if (!name.startsWith("br.com.hcf") &&
+		return !name.startsWith("br.com.hcf") &&
 				!name.startsWith("ch.qos") &&
 				!name.startsWith("com.fasterxml") &&
 				!name.startsWith("com.sun") &&
@@ -74,10 +74,7 @@ public final class HCFUtil {
 				!name.startsWith("org.w3c.dom") &&
 				!name.startsWith("org.xml") &&
 				!name.startsWith("org.yaml") &&
-				!name.startsWith("sun")) {
-			return true;
-		}
-		return false;
+				!name.startsWith("sun");
 	}
 
 }

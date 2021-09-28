@@ -51,12 +51,12 @@ public final class HCFConnection<T, E> {
 
 	public HCFConnection(Class<T> persistentClass) {
 		classe = Optional.ofNullable(persistentClass).orElseThrow(() -> new NullPointerException("PersistentClass is null"));
-		session = HCFFactory.getFactory().openSession();
+		session = HCFFactory.getInstance().getFactory().openSession();
 	}
 	
 	public HCFConnection(Class<T> persistentClass, Connection connection) {
 		classe = Optional.ofNullable(persistentClass).orElseThrow(() -> new NullPointerException("PersistentClass is null"));
-		session = HCFFactory.getFactory().withOptions().connection(Optional.ofNullable(connection).orElseThrow(() -> new NullPointerException("Connection is null"))).openSession();
+		session = HCFFactory.getInstance().getFactory().withOptions().connection(Optional.ofNullable(connection).orElseThrow(() -> new NullPointerException("Connection is null"))).openSession();
 	}
 	
 	public HCFConnection(Class<T> persistentClass, SessionFactory sessionFactory) {
@@ -341,7 +341,7 @@ public final class HCFConnection<T, E> {
 		Transaction transaction = null;
 		Session session = null;
 		try {
-			session = HCFFactory.getFactory().openSession();
+			session = HCFFactory.getInstance().getFactory().openSession();
 			transaction = session.beginTransaction();
 			session.createNativeQuery(sql).executeUpdate();
 		} catch (Exception e) {
@@ -380,7 +380,7 @@ public final class HCFConnection<T, E> {
 	public static List<?> getElementsBySQL(String sql) {
 		Session session = null;
 		try {
-			session = HCFFactory.getFactory().openSession();
+			session = HCFFactory.getInstance().getFactory().openSession();
 			return session.createNativeQuery(sql).getResultList();
 		} catch (Exception e) {
 			e.printStackTrace();
