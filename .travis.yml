@@ -1,6 +1,2 @@
 language: java
 jdk: oraclejdk11
-dist: trusty
-sudo: false
-
-install: mvn clean install -Dgpg.skip
