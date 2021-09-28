@@ -53,7 +53,7 @@ products.forEach(System.out::println);
 
 ## Built with
 * [hibernate-orm](https://github.com/hibernate/hibernate-orm) - Framework used.
-* [reflections](https://github.com/ronmamo/reflections) - Framework used.
+* [reflections8](https://github.com/aschoerk/reflections8) - Framework used.
 
 ## Authors
 * **Eduardo W. K. Priester** - *developer* - [github](https://github.com/Eduardo-Karpinski)
