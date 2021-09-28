@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
-import org.reflections.Reflections;
+import org.reflections8.Reflections;
 
 public final class HCFUtil {
 	
@@ -32,6 +32,12 @@ public final class HCFUtil {
 	}
 
 	public static Set<Class<?>> getAnnotatedClasses() {
+		
+		Arrays.asList(Package.getPackages()).stream()
+		.map(Package::getName)
+		.filter(HCFUtil::checkPackageName)
+		.collect(Collectors.toSet()).forEach(System.out::println);
+		
 		Reflections reflections = new Reflections(Arrays.asList(Package.getPackages()).stream()
 				.map(Package::getName)
 				.filter(HCFUtil::checkPackageName)

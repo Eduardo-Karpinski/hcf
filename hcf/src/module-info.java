@@ -4,7 +4,7 @@ module hibernateConnectorFacilitator {
 	exports br.com.hcf.enums;
 	exports br.com.hcf.annotations;
 	
-	requires reflections; // Name of automatic module 'reflections' is unstable
+	requires reflections8; // Name of automatic module 'reflections8' is unstable
 	requires java.naming;
 	requires java.persistence;
 	

@@ -24,7 +24,7 @@ public final class HCFFactory {
 	private static String propertiesPath = "hibernate.properties";
 	
 	static {
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> new HCFFactory().shutdown()));
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> instance.shutdown()));
 		
 		System.err.println("################################################");
 		System.err.println("Hibernate Connection facilitator - Version 3.4.1");
