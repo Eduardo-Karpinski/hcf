@@ -1,6 +1,6 @@
 # About
-[![Code Quality Score](https://www.code-inspector.com/project/29204/score/svg)](https://frontend.code-inspector.com/public/project/29204/hcf/dashboard)
-[![Code Grade](https://www.code-inspector.com/project/29204/status/svg)](https://frontend.code-inspector.com/public/project/29204/hcf/dashboard)<br/>
+[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/Eduardo-Karpinski/hcf.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Eduardo-Karpinski/hcf/context:java)<br/>
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/Eduardo-Karpinski/hcf.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Eduardo-Karpinski/hcf/alerts/)
 HCF is a generic DAO for database persistence.
 
 ## Dependency Management
