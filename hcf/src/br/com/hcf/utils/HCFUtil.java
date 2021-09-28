@@ -32,16 +32,14 @@ public final class HCFUtil {
 	}
 
 	public static Set<Class<?>> getAnnotatedClasses() {
-		
-		Arrays.asList(Package.getPackages()).stream()
-		.map(Package::getName)
-		.filter(HCFUtil::checkPackageName)
-		.collect(Collectors.toSet()).forEach(System.out::println);
-		
-		Reflections reflections = new Reflections(Arrays.asList(Package.getPackages()).stream()
+		Set<String> packages = Arrays.asList(Package.getPackages()).stream()
 				.map(Package::getName)
 				.filter(HCFUtil::checkPackageName)
-				.collect(Collectors.toSet()));
+				.collect(Collectors.toSet());
+		
+		System.err.println("HCF Packages To Read - " + packages);
+		
+		Reflections reflections = new Reflections(packages);
 		return reflections.getTypesAnnotatedWith(Entity.class);
 	}
 	
