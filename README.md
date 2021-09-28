@@ -52,7 +52,6 @@ products.forEach(System.out::println);
 ```
 
 ## Built with
-* Java - Language used (compiled in version 11).
 * [hibernate-orm](https://github.com/hibernate/hibernate-orm) - Framework used.
 * [reflections](https://github.com/ronmamo/reflections) - Framework used.
 
