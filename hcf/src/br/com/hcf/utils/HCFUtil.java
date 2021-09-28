@@ -2,11 +2,7 @@ package br.com.hcf.utils;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -36,13 +32,11 @@ public final class HCFUtil {
 	}
 
 	public static Set<Class<?>> getAnnotatedClasses() {
-		return Set.of(Package.getPackages()).stream()
+		Reflections reflections = new Reflections(Arrays.asList(Package.getPackages()).stream()
 				.map(Package::getName)
-				.filter(checkPackageName())
-				.map(Reflections::new)
-				.map(HCFValidator.classValid(reflections -> reflections.getTypesAnnotatedWith(Entity.class)))
-				.flatMap(Collection::stream)
-				.collect(Collectors.toSet());
+				.filter(HCFUtil::checkPackageName)
+				.collect(Collectors.toSet()));
+		return reflections.getTypesAnnotatedWith(Entity.class);
 	}
 	
 	/**
@@ -50,54 +44,40 @@ public final class HCFUtil {
 	 * org.jboss.security.acl.ACLEntryImpl are an entity,
 	 * the rest is unnecessary for reading.
 	 */
-	private static Predicate<? super String> checkPackageName() {
-		return p -> !p.startsWith("br.com.hcf") &&
-					!p.startsWith("ch.qos") &&
-					!p.startsWith("com.fasterxml") &&
-					!p.startsWith("com.sun") &&
-					!p.startsWith("com.mysql") &&
-					!p.startsWith("io.jaegertracing") &&
-					!p.startsWith("io.smallrye") &&
-					!p.startsWith("io.undertow") &&
-					!p.startsWith("java") &&
-					!p.startsWith("jakarta") &&
-					!p.startsWith("jdk") &&
-					!p.startsWith("net.bytebuddy") &&
-					!p.startsWith("org.apache") &&
-					!p.startsWith("org.eclipse") &&
-					!p.startsWith("org.glassfish") &&
-					!p.startsWith("org.graalvm") &&
-					!p.startsWith("org.hibernate") &&
-					!p.startsWith("org.ietf") &&
-					!p.startsWith("org.jberet") &&
-					!p.startsWith("org.jcp") &&
-					!p.startsWith("org.jboss") &&
-					!p.startsWith("org.reflections") &&
-					!p.startsWith("org.picketbox") &&
-					!p.startsWith("org.slf4j") &&
-					!p.startsWith("org.springframework") &&
-					!p.startsWith("org.wildfly") &&
-					!p.startsWith("org.w3c.dom") &&
-					!p.startsWith("org.xml") &&
-					!p.startsWith("org.yaml") &&
-					!p.startsWith("sun");
-	}
-
-}
-
-@FunctionalInterface 
-interface HCFValidator<I, O, T extends Throwable> {
-
-	O apply(I t) throws T;
-
-	static <I, O, T extends Throwable> Function<I, Set<Class<?>>> classValid(HCFValidator<I, Set<Class<?>>, T> validator) {
-		return c -> {
-			try {
-				return validator.apply(c);
-			} catch (Throwable e) {
-				return new HashSet<Class<?>>();
-			}
-		};
+	private static boolean checkPackageName(String name) {
+		if (!name.startsWith("br.com.hcf") &&
+				!name.startsWith("ch.qos") &&
+				!name.startsWith("com.fasterxml") &&
+				!name.startsWith("com.sun") &&
+				!name.startsWith("com.mysql") &&
+				!name.startsWith("io.jaegertracing") &&
+				!name.startsWith("io.smallrye") &&
+				!name.startsWith("io.undertow") &&
+				!name.startsWith("java") &&
+				!name.startsWith("jakarta") &&
+				!name.startsWith("jdk") &&
+				!name.startsWith("net.bytebuddy") &&
+				!name.startsWith("org.apache") &&
+				!name.startsWith("org.eclipse") &&
+				!name.startsWith("org.glassfish") &&
+				!name.startsWith("org.graalvm") &&
+				!name.startsWith("org.hibernate") &&
+				!name.startsWith("org.ietf") &&
+				!name.startsWith("org.jberet") &&
+				!name.startsWith("org.jcp") &&
+				!name.startsWith("org.jboss") &&
+				!name.startsWith("org.reflections") &&
+				!name.startsWith("org.picketbox") &&
+				!name.startsWith("org.slf4j") &&
+				!name.startsWith("org.springframework") &&
+				!name.startsWith("org.wildfly") &&
+				!name.startsWith("org.w3c.dom") &&
+				!name.startsWith("org.xml") &&
+				!name.startsWith("org.yaml") &&
+				!name.startsWith("sun")) {
+			return true;
+		}
+		return false;
 	}
 
 }

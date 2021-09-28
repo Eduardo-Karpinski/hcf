@@ -1,6 +1,6 @@
 package br.com.hcf;
 
-public final class HCFOrder {
+public class HCFOrder {
 
 	private Boolean asc;
 	private String field;

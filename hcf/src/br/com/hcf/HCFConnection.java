@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import javax.persistence.ManyToMany;
@@ -43,9 +44,10 @@ import br.com.hcf.utils.HCFUtil;
 
 public final class HCFConnection<T, E> {
 	
-	private Class<T> classe = null;
-	private Session session = null;
-	private List<Predicate> predicates = new ArrayList<>();
+	private final Class<T> classe;
+	private final Session session;
+	private Transaction transaction;
+	private final List<Predicate> predicates = new ArrayList<>();
 
 	public HCFConnection(Class<T> persistentClass) {
 		classe = Optional.ofNullable(persistentClass).orElseThrow(() -> new NullPointerException("PersistentClass is null"));
@@ -72,50 +74,27 @@ public final class HCFConnection<T, E> {
 	}
 	
 	public void save(List<T> entities, Boolean commitInError) {
-		Transaction transaction = null;
-		AtomicInteger cont = new AtomicInteger(0);
-		try {
-			transaction = session.beginTransaction();
-			entities.forEach(e -> {
-				session.saveOrUpdate(e);
-				if (cont.incrementAndGet() == 20) {
-					session.flush();
-			        session.clear();
-			        cont.set(0);
-			    }
-			});
-			transaction.commit();
-		} catch (Exception e) {
-			if (transaction != null) {
-				if (commitInError) {
-					try {
-						transaction.commit();
-					} catch (Exception e2) {
-						e.printStackTrace();
-					}
-				} else {
-					transaction.rollback();
-				}
-			}
-			e.printStackTrace();
-		} finally {
-			if (session != null && session.isOpen()) {
-				session.close();
-			}
-		}
+		persist(entities, commitInError, true);
 	}
-	
+
 	public void delete(T entity) {
 		delete(Collections.singletonList(entity), false);
 	}
 	
 	public void delete(List<T> entities, Boolean commitInError) {
-		Transaction transaction = null;
+		persist(entities, commitInError, false);
+	}
+
+	private void persist(List<T> entities, Boolean commitInError, boolean isSaveOrUpdate) {
 		AtomicInteger cont = new AtomicInteger(0);
 		try {
 			transaction = session.beginTransaction();
 			entities.forEach(e -> {
-				session.delete(e);
+				if (isSaveOrUpdate) {
+					session.saveOrUpdate(e);
+				} else {
+					session.delete(e);
+				}
 				if (cont.incrementAndGet() == 20) {
 					session.flush();
 			        session.clear();
@@ -137,16 +116,13 @@ public final class HCFConnection<T, E> {
 			}
 			e.printStackTrace();
 		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
 	@SuppressWarnings("unchecked")
 	public int massiveDelete(E... parameters) {
 		if (parameters.length % 4 != 0) throw new IllegalArgumentException("Parameters is not a multiple of 4.");
-		Transaction transaction = null;
 		try {
 			transaction = session.beginTransaction();
 			CriteriaBuilder builder  = session.getCriteriaBuilder();
@@ -160,17 +136,11 @@ public final class HCFConnection<T, E> {
 			if (transaction != null) transaction.rollback();
 			return -1;
 		} finally {
-			if (transaction != null && transaction.getStatus().equals(TransactionStatus.ACTIVE)) {
-				transaction.commit();
-			}
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
 	public int massiveDelete(List<HCFSearch> hcfSearchs) {
-		Transaction transaction = null;
 		try {
 			transaction = session.beginTransaction();
 			CriteriaBuilder builder  = session.getCriteriaBuilder();
@@ -184,19 +154,13 @@ public final class HCFConnection<T, E> {
 			if (transaction != null) transaction.rollback();
 			return -1;
 		} finally {
-			if (transaction != null && transaction.getStatus().equals(TransactionStatus.ACTIVE)) {
-				transaction.commit();
-			}
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
 	@SuppressWarnings("unchecked")
 	public int massiveUpdate(Map<String, Object> values, E... parameters) {
 		if (parameters.length % 4 != 0) throw new IllegalArgumentException("Parameters is not a multiple of 4.");
-		Transaction transaction = null;
 		try {
 			transaction = session.beginTransaction();
 			CriteriaBuilder builder  = session.getCriteriaBuilder();
@@ -211,17 +175,11 @@ public final class HCFConnection<T, E> {
 			if (transaction != null) transaction.rollback();
 			return -1;
 		} finally {
-			if (transaction != null && transaction.getStatus().equals(TransactionStatus.ACTIVE)) {
-				transaction.commit();
-			}
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
 	public int massiveUpdate(Map<String, Object> values, List<HCFSearch> hcfSearchs) {
-		Transaction transaction = null;
 		try {
 			transaction = session.beginTransaction();
 			CriteriaBuilder builder  = session.getCriteriaBuilder();
@@ -236,12 +194,7 @@ public final class HCFConnection<T, E> {
 			if (transaction != null) transaction.rollback();
 			return -1;
 		} finally {
-			if (transaction != null && transaction.getStatus().equals(TransactionStatus.ACTIVE)) {
-				transaction.commit();
-			}
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 
@@ -251,15 +204,13 @@ public final class HCFConnection<T, E> {
 			CriteriaQuery<T> criteria = builder.createQuery(classe);
 			criteria.from(classe);
 			List<T> resultList = session.createQuery(criteria).getResultList();
-			resultList.forEach(t -> getRelationshipByHCF(session, t));
+			resultList.forEach(this::getRelationshipByHCF);
 			return resultList;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
@@ -272,7 +223,7 @@ public final class HCFConnection<T, E> {
 			criteria.select(join).where(builder.equal(root.get(HCFUtil.getId(father)), id));
 			TypedQuery<T> query = session.createQuery(criteria);
 			List<T> resultList = query.getResultList();
-			resultList.forEach(t -> getRelationshipByHCF(session, t));
+			resultList.forEach(this::getRelationshipByHCF);
 			return resultList;
 		} catch (NoResultException e) {
 			return null;
@@ -280,9 +231,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
@@ -294,7 +243,7 @@ public final class HCFConnection<T, E> {
 			criteria.where(builder.equal(root.join(column).get(field), id));
 			TypedQuery<T> query = session.createQuery(criteria);
 			List<T> resultList = query.getResultList();
-			resultList.forEach(t -> getRelationshipByHCF(session, t));
+			resultList.forEach(this::getRelationshipByHCF);
 			return resultList;
 		} catch (NoResultException e) {
 			return null;
@@ -302,15 +251,12 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
 	public int deleteById(Object id) {
 		Optional.ofNullable(id).orElseThrow(() -> new NullPointerException("Id is null"));
-		Transaction transaction = null;
 		try {
 			transaction = session.beginTransaction();
 			CriteriaBuilder builder = session.getCriteriaBuilder();
@@ -323,12 +269,7 @@ public final class HCFConnection<T, E> {
 			if (transaction != null) transaction.rollback();
 			return -1;
 		} finally {
-			if (transaction != null && transaction.getStatus().equals(TransactionStatus.ACTIVE)) {
-				transaction.commit();
-			}
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
@@ -341,7 +282,7 @@ public final class HCFConnection<T, E> {
 			criteria.select(root).where(builder.equal(root.get(HCFUtil.getId(classe)), id));
 			TypedQuery<T> query = session.createQuery(criteria);
 			T singleResult = query.getSingleResult();
-			getRelationshipByHCF(session, singleResult);
+			getRelationshipByHCF(singleResult);
 			return singleResult;
 		} catch (NoResultException e) {
 			return null;
@@ -349,9 +290,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
@@ -371,9 +310,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
@@ -390,38 +327,15 @@ public final class HCFConnection<T, E> {
 			criteria.select(root).where(builder.equal(path, subquery));
 			TypedQuery<T> query = session.createQuery(criteria);
 			T singleResult = query.getSingleResult();
-			getRelationshipByHCF(session, singleResult);
+			getRelationshipByHCF(singleResult);
 			return singleResult;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
-	
-	public List<T> getByOrders(List<HCFOrder> orders) {
-		try {
-			CriteriaBuilder builder = session.getCriteriaBuilder();
-			CriteriaQuery<T> criteria = builder.createQuery(classe);
-			Root<T> root = criteria.from(classe);
-			order(orders, builder, criteria, root);
-			TypedQuery<T> query = limitResults(orders, criteria);
-			List<T> resultList = query.getResultList();
-			resultList.forEach(t -> getRelationshipByHCF(session, t));
-			return resultList;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
-		}
-	}
-		
 	
 	public static void sendSQL(String sql) {
 		Transaction transaction = null;
@@ -431,33 +345,35 @@ public final class HCFConnection<T, E> {
 			transaction = session.beginTransaction();
 			session.createNativeQuery(sql).executeUpdate();
 		} catch (Exception e) {
-			if (transaction != null) {
-				transaction.rollback();
-			}
+			if (transaction != null) transaction.rollback();
 			e.printStackTrace();
 		} finally {
 			if (transaction != null && transaction.getStatus().equals(TransactionStatus.ACTIVE)) {
-				transaction.commit();
+				try {
+					transaction.commit();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 			if (session != null && session.isOpen())  {
-				session.close();
+				try {
+					session.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}
 
 	public List<T> getObjectBySQL(String sql) {
-		Session session = null;
 		try {
-			session = HCFFactory.getFactory().openSession();
 			NativeQuery<T> nativeQuery = session.createNativeQuery(sql, classe);
 			return nativeQuery.getResultList();
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
@@ -487,9 +403,7 @@ public final class HCFConnection<T, E> {
 		} catch (Exception e) {
 			return null;
 		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
@@ -504,9 +418,7 @@ public final class HCFConnection<T, E> {
 		} catch (Exception e) {
 			return null;
 		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
@@ -522,9 +434,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
     }
 	
@@ -540,7 +450,7 @@ public final class HCFConnection<T, E> {
 			criteria.select(root).where(predicates.toArray(Predicate[]::new));
 			TypedQuery<T> query = limitResults(orders, criteria);
 			T singleResult = query.getSingleResult();
-			getRelationshipByHCF(session, singleResult);
+			getRelationshipByHCF(singleResult);
 			return singleResult;
 		} catch (NoResultException e) {
 			return null;
@@ -548,9 +458,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
@@ -566,7 +474,7 @@ public final class HCFConnection<T, E> {
 			criteria.select(root).where(predicates.toArray(Predicate[]::new));
 			TypedQuery<T> query = limitResults(orders, criteria);
 			List<T> resultList = query.getResultList();
-			resultList.forEach(t -> getRelationshipByHCF(session, t));
+			resultList.forEach(this::getRelationshipByHCF);
 			return resultList;
 		} catch (NoResultException e) {
 			return null;
@@ -574,9 +482,7 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
@@ -590,7 +496,7 @@ public final class HCFConnection<T, E> {
 			criteria.select(root).where(predicates.toArray(Predicate[]::new));
 			TypedQuery<T> query = limitResults(orders, criteria);
 			List<T> resultList = query.getResultList();
-			resultList.forEach(t -> getRelationshipByHCF(session, t));
+			resultList.forEach(this::getRelationshipByHCF);
 			return resultList;
 		} catch (NoResultException e) {
 			return null;
@@ -598,13 +504,11 @@ public final class HCFConnection<T, E> {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (session != null && session.isOpen())  {
-				session.close();
-			}
+			close();
 		}
 	}
 	
-	private void getRelationshipByHCF(Session session, T father) {
+	private void getRelationshipByHCF(T father) {
 		try {
 			Class<?> fatherClass = father.getClass();
 			if(fatherClass.getAnnotation(HCFRelationship.class) != null) {
@@ -634,7 +538,7 @@ public final class HCFConnection<T, E> {
 						TypedQuery<T> query = session.createQuery(criteria);
 						
 			            List<T> resultList = query.getResultList();
-			            resultList.forEach(t -> getRelationshipByHCF(session, t));
+			            resultList.forEach(t -> getRelationshipByHCF(t));
 			            
 						list.set(father, resultList);
 			            list.setAccessible(false);
@@ -750,7 +654,7 @@ public final class HCFConnection<T, E> {
 				predicates.remove(predicates.size() - 3);
 				predicates.remove(predicates.size() - 2);
 				break;
-			case DEFAULT:
+			default:
 				break;
 			}
 		} catch (IndexOutOfBoundsException ignore) {
@@ -760,10 +664,10 @@ public final class HCFConnection<T, E> {
 
 	private void order(List<HCFOrder> orders, CriteriaBuilder builder, CriteriaQuery<T> criteria, Root<T> root) {
 		if (orders == null) return;
-		List<Order> persistenceOrders = new ArrayList<>();
-		orders.stream()
+		List<Order> persistenceOrders = orders.stream()
 			.filter(o -> o.getAsc() != null && o.getField() != null)
-			.forEach(o -> persistenceOrders.add(o.getAsc() ? builder.asc(root.get(o.getField())) : builder.desc(root.get(o.getField()))));
+			.map(o -> o.getAsc() ? builder.asc(root.get(o.getField())) : builder.desc(root.get(o.getField())))
+			.collect(Collectors.toList());
 		criteria.orderBy(persistenceOrders);
 	}
 	
@@ -774,6 +678,23 @@ public final class HCFConnection<T, E> {
 			return session.createQuery(criteria).setFirstResult(offset).setMaxResults(limit);
 		} catch (Exception e) {
 			return session.createQuery(criteria);
+		}
+	}
+	
+	private void close() {
+		if (transaction != null && transaction.getStatus().equals(TransactionStatus.ACTIVE)) {
+			try {
+				transaction.commit();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		if (session != null && session.isOpen())  {
+			try {
+				session.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	

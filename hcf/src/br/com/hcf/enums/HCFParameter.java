@@ -11,7 +11,6 @@ public enum HCFParameter {
 	GROUPBY(),
 	NOTEQUAL(),
 	NOTEMPTY(),
-//	DISTINCT(),
 	LESSTHAN(),
 	ISNOTNULL(),
 	GREATERTHAN(),

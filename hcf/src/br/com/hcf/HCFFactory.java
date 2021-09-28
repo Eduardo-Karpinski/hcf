@@ -22,12 +22,21 @@ public final class HCFFactory {
 	private static String propertiesPath = "hibernate.properties";
 	private static boolean internal = true;
 	
+	static {
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));
+		
+		System.err.println("################################################");
+		System.err.println("Hibernate Connection facilitator - Version 3.4.1");
+		System.err.println("Eduardo William - karpinskipriester@gmail.com");
+		System.err.println("################################################");
+	}
+	
 	private HCFFactory() {
 
 	}
 
 	public static SessionFactory getFactory() {
-		if (sessionFactory == null) {
+		if (sessionFactory == null || sessionFactory.isClosed()) {
 			StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder();
 			if (internal) {
 				registryBuilder.loadProperties(propertiesPath);
@@ -38,6 +47,7 @@ public final class HCFFactory {
 			try {
 				MetadataSources metadataSources = new MetadataSources(registry);
 				HCFUtil.getAnnotatedClasses().forEach(c -> metadataSources.addAnnotatedClass(c));
+				System.err.println("HCF Annotated Classes - " + metadataSources.getAnnotatedClasses());
 				sessionFactory = metadataSources.buildMetadata().buildSessionFactory();
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -62,9 +72,7 @@ public final class HCFFactory {
 
 		Configuration conf = new Configuration();
 		
-		if (propertiesInMap != null) {
-			propertiesInMap.forEach((k, v) -> conf.setProperty(k, v));
-		} else {
+		if (propertiesInMap == null) {
 			StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder();
 			Properties properties;
 			if (isFile) {
@@ -73,6 +81,8 @@ public final class HCFFactory {
 				properties = registryBuilder.getConfigLoader().loadProperties(propertiesPath);
 			}
 			properties.forEach((k, v) -> conf.setProperty(k.toString(), v.toString()));
+		} else {
+			propertiesInMap.forEach((k, v) -> conf.setProperty(k, v));
 		}
 
 		if (useHCFClassCollector) {
@@ -118,6 +128,8 @@ public final class HCFFactory {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			sessionFactory = null;
 		}
 	}
 

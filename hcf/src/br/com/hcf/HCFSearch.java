@@ -8,11 +8,7 @@ public class HCFSearch {
 	private Object value;
 	private HCFParameter parameter;
 	private HCFOperator operator;
-
-	public HCFSearch() {
-
-	}
-
+	
 	public String getField() {
 		return field;
 	}
