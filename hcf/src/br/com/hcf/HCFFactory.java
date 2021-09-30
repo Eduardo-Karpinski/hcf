@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import javax.persistence.EntityManager;
 
@@ -22,18 +23,23 @@ public final class HCFFactory {
 	private static SessionFactory sessionFactory = null;
 	private final static HCFFactory instance = new HCFFactory();
 	private static String propertiesPath = "hibernate.properties";
+	private static final Logger logger = Logger.getLogger("HCF");
 	
 	static {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> instance.shutdown()));
 		
-		System.err.println("################################################");
-		System.err.println("Hibernate Connection facilitator - Version 3.4.1");
-		System.err.println("Eduardo William - karpinskipriester@gmail.com");
-		System.err.println("################################################");
+		logger.info("################################################");
+		logger.info("Hibernate Connection facilitator - Version 3.4.1");
+		logger.info("Eduardo William - karpinskipriester@gmail.com");
+		logger.info("################################################");
 	}
 	
 	private HCFFactory() {
 		
+	}
+	
+	public static Logger getLogger() {
+		return logger;
 	}
 	
 	public static HCFFactory getInstance() {
@@ -52,7 +58,6 @@ public final class HCFFactory {
 			try {
 				MetadataSources metadataSources = new MetadataSources(registry);
 				HCFUtil.getAnnotatedClasses().forEach(c -> metadataSources.addAnnotatedClass(c));
-				System.err.println("HCF Annotated Classes - " + metadataSources.getAnnotatedClasses());
 				sessionFactory = metadataSources.buildMetadata().buildSessionFactory();
 			} catch (Exception e) {
 				e.printStackTrace();
