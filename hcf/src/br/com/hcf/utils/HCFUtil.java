@@ -69,6 +69,12 @@ public final class HCFUtil {
 				&& !name.startsWith("org.w3c.dom") 
 				&& !name.startsWith("org.xml") 
 				&& !name.startsWith("org.yaml")
+				&& !name.startsWith("org.junit")
+				&& !name.startsWith("org.apiguardian")
+				&& !name.startsWith("org.opentest4j")
+				&& !name.startsWith("junit.runner")
+				&& !name.startsWith("org.hamcrest")
+				&& !name.startsWith("org.junit")
 				&& !name.startsWith("sun");
 	}
 

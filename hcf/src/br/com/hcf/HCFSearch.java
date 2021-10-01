@@ -4,11 +4,23 @@ import br.com.hcf.enums.HCFOperator;
 import br.com.hcf.enums.HCFParameter;
 
 public class HCFSearch {
+	
 	private String field;
 	private Object value;
 	private HCFParameter parameter;
 	private HCFOperator operator;
 	
+	public HCFSearch() {
+
+	}
+
+	public HCFSearch(String field, Object value, HCFParameter parameter, HCFOperator operator) {
+		this.field = field;
+		this.value = value;
+		this.parameter = parameter;
+		this.operator = operator;
+	}
+
 	public String getField() {
 		return field;
 	}

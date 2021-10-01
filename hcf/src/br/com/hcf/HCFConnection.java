@@ -392,12 +392,12 @@ public final class HCFConnection<T, E> {
 		}
 	}
 	
-	public Long count() {
+	public Long count(boolean distinct) {
 		try {
 			CriteriaBuilder builder = session.getCriteriaBuilder();
 			CriteriaQuery<Long> criteria = builder.createQuery(Long.class);
 			Root<T> root = criteria.from(classe);
-			criteria.select(builder.count(root));
+			criteria.select(distinct ? builder.countDistinct(root) : builder.count(root));
 			TypedQuery<Long> query = session.createQuery(criteria);
 			return query.getSingleResult();
 		} catch (Exception e) {
@@ -406,37 +406,6 @@ public final class HCFConnection<T, E> {
 			close();
 		}
 	}
-	
-	public Long countDistinct() {
-		try {
-			CriteriaBuilder builder = session.getCriteriaBuilder();
-			CriteriaQuery<Long> criteria = builder.createQuery(Long.class);
-			Root<T> root = criteria.from(classe);
-			criteria.select(builder.countDistinct(root));
-			TypedQuery<Long> query = session.createQuery(criteria);
-			return query.getSingleResult();
-		} catch (Exception e) {
-			return null;
-		} finally {
-			close();
-		}
-	}
-	
-	public List<String> getDistinctField(String field) {
-		try {
-			CriteriaBuilder builder = session.getCriteriaBuilder();
-			CriteriaQuery<String> criteria = builder.createQuery(String.class);
-			Root<T> root = criteria.from(classe);
-	        criteria.select(root.get(field)).distinct(true).orderBy(builder.asc(root.get(field)));
-	        TypedQuery<String> query = session.createQuery(criteria);
-	        return query.getResultList();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		} finally {
-			close();
-		}
-    }
 	
 	@SuppressWarnings("unchecked")
 	public T searchWithOneResult(List<HCFOrder> orders, E... parameters) {
@@ -658,7 +627,7 @@ public final class HCFConnection<T, E> {
 				break;
 			}
 		} catch (IndexOutOfBoundsException ignore) {
-			// Are probably iterating a collection and it was not possible to use DEFAULT
+			// Are probably iterating a collection and it was not possible to use HCFOperator.NONE
 		}
 	}
 

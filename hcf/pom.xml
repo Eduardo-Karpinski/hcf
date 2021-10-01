@@ -30,7 +30,6 @@
 		</dependency>
 	</dependencies>
 	<build>
-		<sourceDirectory>src</sourceDirectory>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -43,8 +42,8 @@
 	</build>
 	<properties>
 		<java.version>11</java.version>
-		<reflections8.version>0.11.7</reflections8.version>
 		<hibernate.version>5.5.7.Final</hibernate.version>
+		<reflections8.version>0.11.7</reflections8.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
