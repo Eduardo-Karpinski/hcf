@@ -235,12 +235,12 @@ public final class HCFConnection<T, E> {
 		}
 	}
 	
-	public List<T> getByInvertedRelation(String column, String field, Object id) {
+	public List<T> getByInvertedRelation(Class<?> child, String column, Object id) {
 		try {
 			CriteriaBuilder builder = session.getCriteriaBuilder();
 			CriteriaQuery<T> criteria = builder.createQuery(classe);
 			Root<T> root = criteria.from(classe);
-			criteria.where(builder.equal(root.join(column).get(field), id));
+			criteria.where(builder.equal(root.join(column).get(HCFUtil.getId(child)), id));
 			TypedQuery<T> query = session.createQuery(criteria);
 			List<T> resultList = query.getResultList();
 			resultList.forEach(this::getRelationshipByHCF);
@@ -295,7 +295,7 @@ public final class HCFConnection<T, E> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public Object[] bringAddition(List<String> Fields, E... parameters) {
+	public Object bringAddition(List<String> Fields, E... parameters) {
 		try {
 			CriteriaBuilder builder = session.getCriteriaBuilder();
 			CriteriaQuery<Object[]> criteria = builder.createQuery(Object[].class);
@@ -392,12 +392,12 @@ public final class HCFConnection<T, E> {
 		}
 	}
 	
-	public Long count(boolean distinct) {
+	public Long count() {
 		try {
 			CriteriaBuilder builder = session.getCriteriaBuilder();
 			CriteriaQuery<Long> criteria = builder.createQuery(Long.class);
 			Root<T> root = criteria.from(classe);
-			criteria.select(distinct ? builder.countDistinct(root) : builder.count(root));
+			criteria.select(builder.count(root));
 			TypedQuery<Long> query = session.createQuery(criteria);
 			return query.getSingleResult();
 		} catch (Exception e) {
@@ -410,6 +410,28 @@ public final class HCFConnection<T, E> {
 	@SuppressWarnings("unchecked")
 	public T searchWithOneResult(List<HCFOrder> orders, E... parameters) {
 		if (parameters.length % 4 != 0) throw new IllegalArgumentException("Parameters is not a multiple of 4.");
+		try {
+			CriteriaBuilder builder = session.getCriteriaBuilder();
+			CriteriaQuery<T> criteria = builder.createQuery(classe);
+			Root<T> root = criteria.from(classe);
+			order(orders, builder, criteria, root);
+			applyPredicate(builder, criteria, root, parameters);
+			criteria.select(root).where(predicates.toArray(Predicate[]::new));
+			TypedQuery<T> query = limitResults(orders, criteria);
+			T singleResult = query.getSingleResult();
+			getRelationshipByHCF(singleResult);
+			return singleResult;
+		} catch (NoResultException e) {
+			return null;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		} finally {
+			close();
+		}
+	}
+	
+	public T searchWithOneResult(List<HCFOrder> orders, List<HCFSearch> parameters) {
 		try {
 			CriteriaBuilder builder = session.getCriteriaBuilder();
 			CriteriaQuery<T> criteria = builder.createQuery(classe);

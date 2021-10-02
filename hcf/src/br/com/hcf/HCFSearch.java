@@ -11,7 +11,7 @@ public class HCFSearch {
 	private HCFOperator operator;
 	
 	public HCFSearch() {
-
+		// empty constructor created to give more options when instantiating the class
 	}
 
 	public HCFSearch(String field, Object value, HCFParameter parameter, HCFOperator operator) {
