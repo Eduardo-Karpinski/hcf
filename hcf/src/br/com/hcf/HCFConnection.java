@@ -85,41 +85,6 @@ public final class HCFConnection<T, E> {
 		persist(entities, commitInError, false);
 	}
 
-	private void persist(List<T> entities, Boolean commitInError, boolean isSaveOrUpdate) {
-		AtomicInteger cont = new AtomicInteger(0);
-		try {
-			transaction = session.beginTransaction();
-			entities.forEach(e -> {
-				if (isSaveOrUpdate) {
-					session.saveOrUpdate(e);
-				} else {
-					session.delete(e);
-				}
-				if (cont.incrementAndGet() == 20) {
-					session.flush();
-			        session.clear();
-			        cont.set(0);
-			    }
-			});
-			transaction.commit();
-		} catch (Exception e) {
-			if (transaction != null) {
-				if (commitInError) {
-					try {
-						transaction.commit();
-					} catch (Exception e2) {
-						e.printStackTrace();
-					}
-				} else {
-					transaction.rollback();
-				}
-			}
-			e.printStackTrace();
-		} finally {
-			close();
-		}
-	}
-	
 	@SuppressWarnings("unchecked")
 	public int massiveDelete(E... parameters) {
 		if (parameters.length % 4 != 0) throw new IllegalArgumentException("Parameters is not a multiple of 4.");
@@ -420,6 +385,22 @@ public final class HCFConnection<T, E> {
 		}
 	}
 	
+	public List<String> getDistinctField(String field) {
+		try {
+			CriteriaBuilder builder = session.getCriteriaBuilder();
+			CriteriaQuery<String> criteria = builder.createQuery(String.class);
+			Root<T> root = criteria.from(classe);
+	        criteria.select(root.get(field)).distinct(true).orderBy(builder.asc(root.get(field)));
+	        TypedQuery<String> query = session.createQuery(criteria);
+	        return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		} finally {
+			close();
+		}
+    }
+	
 	@SuppressWarnings("unchecked")
 	public T searchWithOneResult(List<HCFOrder> orders, E... parameters) {
 		if (parameters.length % 4 != 0) throw new IllegalArgumentException("Parameters is not a multiple of 4.");
@@ -507,6 +488,41 @@ public final class HCFConnection<T, E> {
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
+		} finally {
+			close();
+		}
+	}
+	
+	private void persist(List<T> entities, Boolean commitInError, boolean isSaveOrUpdate) {
+		AtomicInteger cont = new AtomicInteger(0);
+		try {
+			transaction = session.beginTransaction();
+			entities.forEach(e -> {
+				if (isSaveOrUpdate) {
+					session.saveOrUpdate(e);
+				} else {
+					session.delete(e);
+				}
+				if (cont.incrementAndGet() == 20) {
+					session.flush();
+			        session.clear();
+			        cont.set(0);
+			    }
+			});
+			transaction.commit();
+		} catch (Exception e) {
+			if (transaction != null) {
+				if (commitInError) {
+					try {
+						transaction.commit();
+					} catch (Exception e2) {
+						e.printStackTrace();
+					}
+				} else {
+					transaction.rollback();
+				}
+			}
+			e.printStackTrace();
 		} finally {
 			close();
 		}
