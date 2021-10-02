@@ -295,17 +295,19 @@ public final class HCFConnection<T, E> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public Object bringAddition(List<String> Fields, E... parameters) {
+	public List<Object[]> bringAddition(List<HCFOrder> orders, List<String> Fields, E... parameters) {
 		try {
 			CriteriaBuilder builder = session.getCriteriaBuilder();
 			CriteriaQuery<Object[]> criteria = builder.createQuery(Object[].class);
 			Root<T> root = criteria.from(classe);
 			List<Selection<?>> selections = new ArrayList<>();
-			if (parameters != null) applyPredicate(builder, criteria, root, parameters);
+			order(orders, builder, criteria, root);
+			applyPredicate(builder, criteria, root, parameters);
+			criteria.getGroupList().forEach(selections::add);
 			Fields.forEach(field -> selections.add(builder.sum(root.get(field))));
 			criteria.multiselect(selections).where(predicates.toArray(Predicate[]::new));
 			TypedQuery<Object[]> query = session.createQuery(criteria);
-			return query.getSingleResult();
+			return query.getResultList();
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -653,7 +655,8 @@ public final class HCFConnection<T, E> {
 		}
 	}
 
-	private void order(List<HCFOrder> orders, CriteriaBuilder builder, CriteriaQuery<T> criteria, Root<T> root) {
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private void order(List<HCFOrder> orders, CriteriaBuilder builder, CriteriaQuery criteria, Root<T> root) {
 		if (orders == null) return;
 		List<Order> persistenceOrders = orders.stream()
 			.filter(o -> o.getAsc() != null && o.getField() != null)
