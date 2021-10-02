@@ -1,4 +1,4 @@
 language: java
 jdk: oraclejdk11
 script:
-- echo "skipping tests"
+ - echo "skipping tests"
