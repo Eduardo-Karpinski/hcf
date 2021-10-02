@@ -306,7 +306,18 @@ public final class HCFConnection<T, E> {
 			criteria.getGroupList().forEach(selections::add);
 			Fields.forEach(field -> selections.add(builder.sum(root.get(field))));
 			criteria.multiselect(selections).where(predicates.toArray(Predicate[]::new));
-			TypedQuery<Object[]> query = session.createQuery(criteria);
+			
+			// limitResults method doesn't accept TypedQuery<Object[]>, maybe in the near future I'll remove the type of TypedQuery
+			TypedQuery<Object[]> query;
+			Integer limit = null;
+			Integer offset = 0;
+			try {
+				limit = orders.stream().map(HCFOrder::getLimit).filter(Objects::nonNull).findFirst().orElse(null);
+				offset = orders.stream().map(HCFOrder::getOffset).filter(Objects::nonNull).findFirst().orElse(0);
+				query = session.createQuery(criteria).setFirstResult(offset).setMaxResults(limit);
+			} catch (Exception ignore) {
+				query = session.createQuery(criteria);
+			}
 			return query.getResultList();
 		} catch (Exception e) {
 			e.printStackTrace();
