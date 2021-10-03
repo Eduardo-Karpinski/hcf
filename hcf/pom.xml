@@ -47,6 +47,19 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
+	<licenses>
+		<license>
+            <name>GNU General Public License version 3</name>
+            <url>https://opensource.org/licenses/GPL-3.0</url>
+            <distribution>repo</distribution>
+        </license>
+	</licenses>
+	<scm>
+        <url>git@github.com:Eduardo-Karpinski/hcf.git</url>
+        <connection>scm:git:git@github.com:Eduardo-Karpinski/hcf.git</connection>
+        <developerConnection>scm:git:git@github.com:Eduardo-Karpinski/hcf.git</developerConnection>
+    	<tag>hcf</tag>
+    </scm>
 	<distributionManagement>
 		<repository>
 			<id>myMavenRepo.write</id>
