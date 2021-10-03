@@ -45,12 +45,8 @@ hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
 hibernate.enable_lazy_load_no_trans=true
 ```
 
-## How to test HCF 
-```
-// Product is a entity
-List<Product> products = new HCFConnection<>(Product.class).all();
-products.forEach(System.out::println);
-```
+## HCF Wiki
+(https://github.com/Eduardo-Karpinski/hcf/wiki)
 
 ## Built with
 * [hibernate-orm](https://github.com/hibernate/hibernate-orm) - Framework used.
