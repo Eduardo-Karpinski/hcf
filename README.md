@@ -46,7 +46,7 @@ hibernate.enable_lazy_load_no_trans=true
 ```
 
 ## HCF Wiki
-(https://github.com/Eduardo-Karpinski/hcf/wiki)
+https://github.com/Eduardo-Karpinski/hcf/wiki
 
 ## Built with
 * [hibernate-orm](https://github.com/hibernate/hibernate-orm) - Framework used.
