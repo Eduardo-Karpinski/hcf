@@ -21,7 +21,7 @@ HCF is a generic DAO for database persistence.
 </repositories>
 ```
 
-## hibernate.properties (optional/recommended)
+## hibernate.properties
 ```
 # example hibernate.properties
 # mysql database used for reference
