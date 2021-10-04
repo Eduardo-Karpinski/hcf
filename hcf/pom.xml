@@ -9,6 +9,7 @@
 	<name>Hibernate Connector Facilitator</name>
 	<description>Generic DAO for database persistence.</description>
 	<url>https://github.com/Eduardo-Karpinski/hcf</url>
+	<inceptionYear>2020</inceptionYear>
 	<developers>
 		<developer>
 			<id>Eduardo-Karpinski</id>
@@ -49,17 +50,17 @@
 	</properties>
 	<licenses>
 		<license>
-            <name>GNU General Public License version 3</name>
-            <url>https://opensource.org/licenses/GPL-3.0</url>
-            <distribution>repo</distribution>
-        </license>
+			<name>GNU General Public License version 3</name>
+			<url>https://opensource.org/licenses/GPL-3.0</url>
+			<distribution>repo</distribution>
+		</license>
 	</licenses>
 	<scm>
-        <url>git@github.com:Eduardo-Karpinski/hcf.git</url>
-        <connection>scm:git:git@github.com:Eduardo-Karpinski/hcf.git</connection>
-        <developerConnection>scm:git:git@github.com:Eduardo-Karpinski/hcf.git</developerConnection>
-    	<tag>hcf</tag>
-    </scm>
+		<url>git@github.com:Eduardo-Karpinski/hcf.git</url>
+		<connection>scm:git:git@github.com:Eduardo-Karpinski/hcf.git</connection>
+		<developerConnection>scm:git:git@github.com:Eduardo-Karpinski/hcf.git</developerConnection>
+		<tag>hcf</tag>
+	</scm>
 	<distributionManagement>
 		<repository>
 			<id>myMavenRepo.write</id>
