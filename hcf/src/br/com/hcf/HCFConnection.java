@@ -385,13 +385,16 @@ public final class HCFConnection<T, E> {
 		}
 	}
 	
-	public List<String> getDistinctField(String field) {
+	@SuppressWarnings("unchecked")
+	public List<Object> getDistinctField(String field, E... parameters) {
+		if (parameters.length % 4 != 0) throw new IllegalArgumentException("Parameters is not a multiple of 4.");
 		try {
 			CriteriaBuilder builder = session.getCriteriaBuilder();
-			CriteriaQuery<String> criteria = builder.createQuery(String.class);
+			CriteriaQuery<Object> criteria = builder.createQuery(Object.class);
 			Root<T> root = criteria.from(classe);
-	        criteria.select(root.get(field)).distinct(true).orderBy(builder.asc(root.get(field)));
-	        TypedQuery<String> query = session.createQuery(criteria);
+			applyPredicate(builder, criteria, root, parameters);
+	        criteria.select(root.get(field)).distinct(true).where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(root.get(field)));
+	        TypedQuery<Object> query = session.createQuery(criteria);
 	        return query.getResultList();
 		} catch (Exception e) {
 			e.printStackTrace();
