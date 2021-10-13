@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
 import javax.persistence.NoResultException;
 import javax.persistence.OneToMany;
 import javax.persistence.TypedQuery;
@@ -538,8 +537,7 @@ public final class HCFConnection<T, E> {
 				Arrays.asList(fatherClass.getDeclaredFields()).stream()
 				.filter(f -> Arrays.asList(f.getAnnotations()).stream().anyMatch(a ->
 						a instanceof OneToMany ||
-						a instanceof ManyToMany ||
-						a instanceof ManyToOne))
+						a instanceof ManyToMany))
 				.map(Field::getName)
 				.forEach(table -> {
 					try {
@@ -603,7 +601,7 @@ public final class HCFConnection<T, E> {
 			applyOperator(builder, operator);
 			break;
 		case LIKE:
-			predicates.add(builder.like(field, value + "%"));
+			predicates.add(builder.like(field, value.toString()));
 			applyOperator(builder, operator);
 			break;
 		case FALSE:
@@ -623,7 +621,7 @@ public final class HCFConnection<T, E> {
 			applyOperator(builder, operator);
 			break;
 		case NOTLIKE:
-			predicates.add(builder.notLike(field, value + "%"));
+			predicates.add(builder.notLike(field, value.toString()));
 			applyOperator(builder, operator);
 			break;
 		case GROUPBY:

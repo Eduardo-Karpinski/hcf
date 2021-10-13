@@ -1,11 +1,13 @@
 package br.com.hcf;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 
@@ -38,14 +40,6 @@ public final class HCFFactory {
 		
 	}
 	
-	public static Logger getLogger() {
-		return logger;
-	}
-	
-	public static HCFFactory getInstance() {
-		return instance;
-	}
-
 	public SessionFactory getFactory() {
 		if (sessionFactory == null || sessionFactory.isClosed()) {
 			StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder();
@@ -79,7 +73,7 @@ public final class HCFFactory {
 			boolean useHCFClassCollector,
 			Package[] packages,
 			Set<Class<?>> classes) {
-
+		
 		Configuration conf = new Configuration();
 		
 		if (propertiesInMap == null) {
@@ -99,9 +93,11 @@ public final class HCFFactory {
 			HCFUtil.getAnnotatedClasses().forEach(c -> conf.addAnnotatedClass(c));
 		} else {
 			if (packages != null) {
-				for (Package p : packages) {
-					conf.addPackage(p.getName());
-				}
+				Set<String> names = Arrays.asList(packages).stream()
+						.map(Package::getName)
+						.collect(Collectors.toSet());
+				HCFFactory.getInstance().getLogger().info("Packages To Read - " + names);
+				HCFUtil.getEntities(names).forEach(e -> conf.addAnnotatedClass(e));
 			}
 			Optional.ofNullable(classes).ifPresent(classesOptional -> classesOptional.forEach(c -> conf.addAnnotatedClass(c)));
 		}
@@ -111,6 +107,7 @@ public final class HCFFactory {
 		if (replaceCurrent) {
 			shutdown();
 			sessionFactory = newFactory;
+			instance.getAnnotatedClasses();
 			return sessionFactory;
 		}
 		
@@ -121,7 +118,7 @@ public final class HCFFactory {
 		EntityManager em = null;
 		try {
 			em = sessionFactory.createEntityManager();
-			em.getMetamodel().getEntities().forEach(System.out::println);
+			getLogger().info("Annotated Classes - " + em.getMetamodel().getEntities());
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -140,5 +137,13 @@ public final class HCFFactory {
 			e.printStackTrace();
 		}
 	}
-
+	
+	public Logger getLogger() {
+		return logger;
+	}
+	
+	public static HCFFactory getInstance() {
+		return instance;
+	}
+	
 }
