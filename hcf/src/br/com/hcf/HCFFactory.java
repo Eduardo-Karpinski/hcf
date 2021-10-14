@@ -31,7 +31,7 @@ public final class HCFFactory {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> instance.shutdown()));
 		
 		logger.info("################################################");
-		logger.info("Hibernate Connection facilitator - Version 3.4.1");
+		logger.info("Hibernate Connection facilitator - Version 3.4.2");
 		logger.info("Eduardo William - karpinskipriester@gmail.com");
 		logger.info("################################################");
 	}
