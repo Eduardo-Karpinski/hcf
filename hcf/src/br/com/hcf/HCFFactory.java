@@ -28,7 +28,7 @@ public final class HCFFactory {
 	private static final Logger logger = Logger.getLogger("HCF");
 	
 	static {
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> instance.shutdown()));
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> HCFFactory.getInstance().shutdown()));
 		
 		logger.info("################################################");
 		logger.info("Hibernate Connection facilitator - Version 3.4.2");
