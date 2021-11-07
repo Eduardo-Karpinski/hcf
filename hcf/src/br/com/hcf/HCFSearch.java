@@ -1,15 +1,17 @@
 package br.com.hcf;
 
+import java.util.Objects;
+
 import br.com.hcf.enums.HCFOperator;
 import br.com.hcf.enums.HCFParameter;
 
 public class HCFSearch {
-	
+
 	private String field;
 	private Object value;
 	private HCFParameter parameter;
 	private HCFOperator operator;
-	
+
 	public HCFSearch() {
 		// empty constructor created to give more options when instantiating the class
 	}
@@ -59,13 +61,7 @@ public class HCFSearch {
 
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((field == null) ? 0 : field.hashCode());
-		result = prime * result + ((operator == null) ? 0 : operator.hashCode());
-		result = prime * result + ((parameter == null) ? 0 : parameter.hashCode());
-		result = prime * result + ((value == null) ? 0 : value.hashCode());
-		return result;
+		return Objects.hash(field, operator, parameter, value);
 	}
 
 	@Override
@@ -77,21 +73,8 @@ public class HCFSearch {
 		if (getClass() != obj.getClass())
 			return false;
 		HCFSearch other = (HCFSearch) obj;
-		if (field == null) {
-			if (other.field != null)
-				return false;
-		} else if (!field.equals(other.field))
-			return false;
-		if (operator != other.operator)
-			return false;
-		if (parameter != other.parameter)
-			return false;
-		if (value == null) {
-			if (other.value != null)
-				return false;
-		} else if (!value.equals(other.value))
-			return false;
-		return true;
+		return Objects.equals(field, other.field) && operator == other.operator && parameter == other.parameter
+				&& Objects.equals(value, other.value);
 	}
 
 	@Override

@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
@@ -23,17 +22,16 @@ public final class HCFFactory {
 
 	private static boolean internal = true;
 	private static SessionFactory sessionFactory = null;
-	private final static HCFFactory instance = new HCFFactory();
+	private static final HCFFactory instance = new HCFFactory();
 	private static String propertiesPath = "hibernate.properties";
-	private static final Logger logger = Logger.getLogger("HCF");
 	
 	static {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> HCFFactory.getInstance().shutdown()));
 		
-		logger.info("################################################");
-		logger.info("Hibernate Connection facilitator - Version 3.4.2");
-		logger.info("Eduardo William - karpinskipriester@gmail.com");
-		logger.info("################################################");
+		HCFUtil.getLogger().info("################################################");
+		HCFUtil.getLogger().info("Hibernate Connection facilitator - Version 3.4.3");
+		HCFUtil.getLogger().info("Eduardo William - karpinskipriester@gmail.com");
+		HCFUtil.getLogger().info("################################################");
 	}
 	
 	private HCFFactory() {
@@ -96,7 +94,7 @@ public final class HCFFactory {
 				Set<String> names = Arrays.asList(packages).stream()
 						.map(Package::getName)
 						.collect(Collectors.toSet());
-				HCFFactory.getInstance().getLogger().info("Packages To Read - " + names);
+				HCFUtil.getLogger().info("Packages To Read - " + names);
 				HCFUtil.getEntities(names).forEach(e -> conf.addAnnotatedClass(e));
 			}
 			Optional.ofNullable(classes).ifPresent(classesOptional -> classesOptional.forEach(c -> conf.addAnnotatedClass(c)));
@@ -118,7 +116,7 @@ public final class HCFFactory {
 		EntityManager em = null;
 		try {
 			em = sessionFactory.createEntityManager();
-			getLogger().info("Annotated Classes - " + em.getMetamodel().getEntities());
+			HCFUtil.getLogger().info("Annotated Classes - " + em.getMetamodel().getEntities());
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -136,10 +134,6 @@ public final class HCFFactory {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-	
-	public Logger getLogger() {
-		return logger;
 	}
 	
 	public static HCFFactory getInstance() {

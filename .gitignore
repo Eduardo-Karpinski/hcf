@@ -21,3 +21,11 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+.project
+hcf/.classpath
+hcf/.settings/org.eclipse.core.resources.prefs
+hcf/.settings/org.eclipse.jdt.core.prefs
+hcf/.settings/org.eclipse.wst.common.component
+hcf/.settings/org.eclipse.wst.common.project.facet.core.xml
+hcf/.settings/org.eclipse.wst.validation.prefs
+hcf/src/META-INF/MANIFEST.MF

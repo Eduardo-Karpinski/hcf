@@ -1,5 +1,7 @@
 package br.com.hcf;
 
+import java.util.Objects;
+
 public class HCFOrder {
 
 	private Boolean asc;
@@ -52,13 +54,7 @@ public class HCFOrder {
 
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((asc == null) ? 0 : asc.hashCode());
-		result = prime * result + ((field == null) ? 0 : field.hashCode());
-		result = prime * result + ((limit == null) ? 0 : limit.hashCode());
-		result = prime * result + ((offset == null) ? 0 : offset.hashCode());
-		return result;
+		return Objects.hash(asc, field, limit, offset);
 	}
 
 	@Override
@@ -70,27 +66,8 @@ public class HCFOrder {
 		if (getClass() != obj.getClass())
 			return false;
 		HCFOrder other = (HCFOrder) obj;
-		if (asc == null) {
-			if (other.asc != null)
-				return false;
-		} else if (!asc.equals(other.asc))
-			return false;
-		if (field == null) {
-			if (other.field != null)
-				return false;
-		} else if (!field.equals(other.field))
-			return false;
-		if (limit == null) {
-			if (other.limit != null)
-				return false;
-		} else if (!limit.equals(other.limit))
-			return false;
-		if (offset == null) {
-			if (other.offset != null)
-				return false;
-		} else if (!offset.equals(other.offset))
-			return false;
-		return true;
+		return Objects.equals(asc, other.asc) && Objects.equals(field, other.field)
+				&& Objects.equals(limit, other.limit) && Objects.equals(offset, other.offset);
 	}
 
 	@Override
