@@ -27,5 +27,4 @@ hs_err_pid*
 *.classpath
 *.settings
 *.MF
-hcf/target/classes/META-INF/maven/br.com.hcf/hcf-data/pom.properties
-hcf/target/classes/META-INF/maven/br.com.hcf/hcf-data/pom.xml
+/target/
