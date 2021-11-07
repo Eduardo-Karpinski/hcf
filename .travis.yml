@@ -1,4 +1,6 @@
 language: java
-jdk: oraclejdk11
-script:
- - echo "skipping tests"
+
+jdk:
+  - openjdk8
+  - openjdk9
+  - openjdk11
