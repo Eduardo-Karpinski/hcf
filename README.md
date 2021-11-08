@@ -11,21 +11,21 @@ HCF is a generic DAO for database persistence.
 ## Dependency Management
 ```
 <dependencies>
-	...
-	<dependency>
-	  <groupId>br.com.hcf</groupId>
-	  <artifactId>hcf-data</artifactId>
-	  <version>3.4.3</version>
-	</dependency>
-	...
+    ...
+    <dependency>
+        <groupId>br.com.hcf</groupId>
+	<artifactId>hcf-data</artifactId>
+	<version>3.4.3</version>
+    </dependency>
+    ...
 </dependencies>
 ```
 ```
 <repositories>
-	<repository>
-		<id>myMavenRepo.read</id>
-    	<url>https://mymavenrepo.com/repo/N6enl93StT9D1JnAX2qX/</url>
-  	</repository>
+    <repository>
+        <id>myMavenRepo.read</id>
+        <url>https://mymavenrepo.com/repo/N6enl93StT9D1JnAX2qX/</url>
+    </repository>
 </repositories>
 ```
 
