@@ -10,18 +10,22 @@ HCF is a generic DAO for database persistence.
 
 ## Dependency Management
 ```
-<dependency>
-  <groupId>br.com.hcf</groupId>
-  <artifactId>hcf-data</artifactId>
-  <version>3.4.3</version>
-</dependency>
+<dependencies>
+	...
+	<dependency>
+	  <groupId>br.com.hcf</groupId>
+	  <artifactId>hcf-data</artifactId>
+	  <version>3.4.3</version>
+	</dependency>
+	...
+</dependencies>
 ```
 ```
 <repositories>
-  <repository>
-    <id>myMavenRepo.read</id>
-    <url>https://mymavenrepo.com/repo/N6enl93StT9D1JnAX2qX/</url>
-  </repository>
+	<repository>
+		<id>myMavenRepo.read</id>
+    	<url>https://mymavenrepo.com/repo/N6enl93StT9D1JnAX2qX/</url>
+  	</repository>
 </repositories>
 ```
 
@@ -45,8 +49,8 @@ hibernate.c3p0.max_statements=30
 hibernate.show_sql=false
 hibernate.format_sql=false
 hibernate.hbm2ddl.auto=update
-hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
 hibernate.enable_lazy_load_no_trans=true
+hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
 ```
 
 ## HCF Wiki
