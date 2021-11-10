@@ -15,7 +15,7 @@ HCF is a generic DAO for database persistence.
     <dependency>
         <groupId>br.com.hcf</groupId>
 	<artifactId>hcf-data</artifactId>
-	<version>3.4.3</version>
+	<version>3.4.4</version>
     </dependency>
     ...
 </dependencies>

@@ -518,13 +518,13 @@ public final class HCFConnection<T, E> {
 					try {
 						transaction.commit();
 					} catch (Exception e2) {
-						e.printStackTrace();
+						throw e;
 					}
 				} else {
 					transaction.rollback();
 				}
 			}
-			e.printStackTrace();
+			throw e;
 		} finally {
 			close();
 		}
