@@ -23,15 +23,16 @@ public final class HCFUtil {
 		Field[] fields = classe.getDeclaredFields();
 		
 		for (int i = 0; i < fields.length; i++) {
-			Field field = fields[i];
-			if (field.isAnnotationPresent(Id.class)) return field.getName();
+			if (fields[i].isAnnotationPresent(Id.class)) {
+				return fields[i].getName();
+			}
 		}
-		
-		Class<? super T> superclass = classe.getSuperclass();
-		
-		if (superclass.equals(Object.class)) throw new RuntimeException(Id.class + " not found in fields of " + classe);
-		
-		return getId(superclass);
+			
+		if (classe.getSuperclass().equals(Object.class)) {
+			throw new RuntimeException(Id.class + " not found in fields of " + classe);
+		}
+			
+		return getId(classe.getSuperclass());
 	}
 		
 	public static Set<Class<?>> getAnnotatedClasses() {
