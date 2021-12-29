@@ -307,7 +307,9 @@ public final class HCFConnection<T, E> {
 			getRelationshipByHCF(singleResult);
 			return singleResult;
 		} catch (Exception e) {
-			e.printStackTrace();
+			if (!e.getClass().equals(NullPointerException.class)) {
+				e.printStackTrace();
+			}
 			return null;
 		} finally {
 			close();
