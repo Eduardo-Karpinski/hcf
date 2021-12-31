@@ -306,10 +306,10 @@ public final class HCFConnection<T, E> {
 			T singleResult = query.getSingleResult();
 			getRelationshipByHCF(singleResult);
 			return singleResult;
+		} catch (NoResultException e) {
+			return null;
 		} catch (Exception e) {
-			if (!e.getClass().equals(NullPointerException.class)) {
-				e.printStackTrace();
-			}
+			e.printStackTrace();
 			return null;
 		} finally {
 			close();
