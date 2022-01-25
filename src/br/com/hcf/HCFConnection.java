@@ -405,6 +405,23 @@ public final class HCFConnection<T, E> {
 		}
     }
 	
+	public List<Object> getDistinctField(String field, List<HCFSearch> parameters) {
+		try {
+			CriteriaBuilder builder = session.getCriteriaBuilder();
+			CriteriaQuery<Object> criteria = builder.createQuery(Object.class);
+			Root<T> root = criteria.from(classe);
+			applyPredicate(builder, criteria, root, parameters);
+			criteria.select(root.get(field)).distinct(true).where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(root.get(field)));
+			TypedQuery<Object> query = session.createQuery(criteria);
+			return query.getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		} finally {
+			close();
+		}
+	}
+	
 	@SuppressWarnings("unchecked")
 	public T searchWithOneResult(List<HCFOrder> orders, E... parameters) {
 		if (parameters.length % 4 != 0) throw new IllegalArgumentException("Parameters is not a multiple of 4.");
@@ -576,7 +593,7 @@ public final class HCFConnection<T, E> {
 	}
 	
 	@SuppressWarnings("rawtypes")
-	private void applyPredicate(CriteriaBuilder builder, CriteriaQuery<T> criteria, Root<T> root, List<HCFSearch> parameters) {
+	private void applyPredicate(CriteriaBuilder builder, CriteriaQuery<?> criteria, Root<T> root, List<HCFSearch> parameters) {
 		parameters.forEach(i -> {
 			Path field = root.get(i.getField());
 			Comparable value = (Comparable) i.getValue();
@@ -596,7 +613,7 @@ public final class HCFConnection<T, E> {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private void addPredicate(CriteriaBuilder builder, CriteriaQuery<T> criteria, Path field, Comparable value, HCFParameter parameter, HCFOperator operator) {
+	private void addPredicate(CriteriaBuilder builder, CriteriaQuery<?> criteria, Path field, Comparable value, HCFParameter parameter, HCFOperator operator) {
 		switch (parameter) {
 		case TRUE:
 			predicates.add(builder.isTrue(field));
