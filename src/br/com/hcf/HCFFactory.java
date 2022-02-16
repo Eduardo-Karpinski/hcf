@@ -29,7 +29,7 @@ public final class HCFFactory {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> HCFFactory.getInstance().shutdown()));
 		
 		HCFUtil.getLogger().info("################################################");
-		HCFUtil.getLogger().info("Hibernate Connection facilitator - Version 3.4.4");
+		HCFUtil.getLogger().info("Hibernate Connection facilitator - Version 3.4.5");
 		HCFUtil.getLogger().info("Eduardo William - karpinskipriester@gmail.com");
 		HCFUtil.getLogger().info("################################################");
 	}
