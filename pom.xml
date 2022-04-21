@@ -47,8 +47,6 @@
 		<reflections.version>0.10.2</reflections.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-  		<sonar.organization>eduardo-karpinski</sonar.organization>
-  		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 	</properties>
 	<licenses>
 		<license>
