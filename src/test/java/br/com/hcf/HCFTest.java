@@ -20,7 +20,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 class HCFTest {
 	
 	@BeforeAll
-    static void initAll() {
+    	static void initAll() {
 		HCFConnection.getElementsBySQL("select 0;");
 		HCFConnection.sendSQL("DELETE FROM EntityTestHCF_EntityTestHCFSon ");
 		HCFConnection.sendSQL("DELETE FROM EntityTestHCFSon");
