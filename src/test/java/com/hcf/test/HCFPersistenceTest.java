@@ -20,7 +20,7 @@ import br.com.hcf.enums.HCFParameter;
 
 /**
  * @author Eduardo
- * Here are all the tests related to saving, updating and deleting
+ * Here are all the tests related to saving, updating, deleting and simple readings
  */
 @DisplayName("HCFPersistenceTest")
 class HCFPersistenceTest {

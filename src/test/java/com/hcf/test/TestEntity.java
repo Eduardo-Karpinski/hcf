@@ -90,4 +90,10 @@ public class TestEntity {
 				&& Objects.equals(salary, other.salary);
 	}
 
+	@Override
+	public String toString() {
+		return "TestEntity [id=" + id + ", name=" + name + ", age=" + age + ", salary=" + salary + ", birthDate="
+				+ birthDate + "]";
+	}
+	
 }
