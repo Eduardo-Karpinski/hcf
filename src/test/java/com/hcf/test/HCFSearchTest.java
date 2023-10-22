@@ -2,6 +2,7 @@ package com.hcf.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,29 +14,16 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.hcf.test.entities.TestEntity;
+
 import br.com.hcf.HCFConnection;
+import br.com.hcf.HCFOrder;
 import br.com.hcf.HCFSearch;
 import br.com.hcf.enums.HCFOperator;
 import br.com.hcf.enums.HCFParameter;
 
 @DisplayName("HCFSearchTest")
 class HCFSearchTest {
-	
-//	TRUE(),
-//	LIKE(),
-//	FALSE(),
-//	EQUAL(), ok
-//	EMPTY(),
-//	ISNULL(),
-//	NOTLIKE(),
-//	GROUPBY(),
-//	NOTEQUAL(),
-//	NOTEMPTY(),
-//	LESSTHAN(),
-//	ISNOTNULL(),
-//	GREATERTHAN(),
-//	LESSTHANOREQUALTO(),
-//	GREATERTHANOREQUALTO();
 	
 	private static List<TestEntity> entities;
 	
@@ -66,9 +54,9 @@ class HCFSearchTest {
 		TestEntity entity18 = new TestEntity(null, "Test 18", 38, new BigDecimal(2901.23), LocalDateTime.now().plusDays(17));
 		TestEntity entity19 = new TestEntity(null, "Test 19", 39, new BigDecimal(3012.34), LocalDateTime.now().plusDays(18));
 		TestEntity entity20 = new TestEntity(null, "Test 20", 40, new BigDecimal(3123.45), LocalDateTime.now().plusDays(19));
-		TestEntity entity21 = new TestEntity(null, "Test 21", 41, new BigDecimal(3123.56), LocalDateTime.now().plusDays(20));
+		TestEntity entity21 = new TestEntity(null, "", null, new BigDecimal(3123.56), LocalDateTime.now().plusDays(20));
 
-		entities = Arrays.asList(entity1, entity2, entity3, entity4, entity5,
+		entities = Arrays.asList(entity3, entity2, entity1, entity4, entity5,
 				entity6, entity7, entity8, entity9, entity10, entity11,
 				entity12, entity13, entity14, entity15, entity16, entity17,
 				entity18, entity19, entity20, entity21);
@@ -85,17 +73,141 @@ class HCFSearchTest {
 		
 		TestEntity entity2 = new HCFConnection<>(TestEntity.class).searchWithOneResult(null, 
 				Arrays.asList(new HCFSearch("id", entities.get(1).getId(), HCFParameter.EQUAL, HCFOperator.NONE)));
-		assertNotNull(entity2);
 		
+		assertNotNull(entity2);
 	}
 	
 	@Test
-	void testSearch1() {
+	void testSearchLike() {
+		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(null, 
+				"name", "%3%", HCFParameter.LIKE, HCFOperator.NONE);
+		
+		assertEquals(2, entities.size());
+	}
+	
+	@Test
+	void testSearchNotLike() {
+		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(null, 
+				"name", "%3%", HCFParameter.NOTLIKE, HCFOperator.NONE);
+		
+		assertEquals(19, entities.size());
+	}
+	
+	@Test
+	void testSearchEqual() {
+		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(null, 
+				"name", "Test 1", HCFParameter.EQUAL, HCFOperator.NONE);
+		
+		assertEquals(1, entities.size());
+	}
+	
+	@Test
+	void testSearchNotEqual() {
+		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(null, 
+				"name", "Test 1", HCFParameter.NOTEQUAL, HCFOperator.NONE);
+		
+		assertEquals(20, entities.size());
+	}
+	
+	@Test
+	void testSearchEmpty() {
+		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(null, 
+				"name", null, HCFParameter.EMPTY, HCFOperator.NONE);
+		
+		assertEquals(1, entities.size());
+	}
+	
+	@Test
+	void testSearchNotEmpty() {
+		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(null, 
+				"name", null, HCFParameter.NOTEMPTY, HCFOperator.NONE);
+		
+		assertEquals(20, entities.size());
+	}
+	
+	@Test
+	void testSearchIsNull() {
+		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(null, 
+				"age", null, HCFParameter.ISNULL, HCFOperator.NONE);
+		
+		assertEquals(1, entities.size());
+	}
+	
+	@Test
+	void testSearchIsNotNull() {
+		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(null, 
+				"age", null, HCFParameter.ISNOTNULL, HCFOperator.NONE);
+		
+		assertEquals(20, entities.size());
+	}
+	
+	@Test
+	void testSearchLessThan() {
+		
+		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(null, 
+				"age", 30, HCFParameter.LESSTHAN, HCFOperator.NONE);
+		
+		assertEquals(9, entities.size());
+	}
+	
+	@Test
+	void testSearchLessThanOrEqualTo() {
+		
+		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(null, 
+				"age", 30, HCFParameter.LESSTHANOREQUALTO, HCFOperator.NONE);
+		
+		assertEquals(10, entities.size());
+	}
+	
+	@Test
+	void testSearchGreaterThan() {
+		
+		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(null, 
+				"age", 30, HCFParameter.GREATERTHAN, HCFOperator.NONE);
+		
+		assertEquals(10, entities.size());
+	}
+	
+	@Test
+	void testSearchGreaterThanOrEqualTo() {
 		
 		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(null, 
 				"age", 30, HCFParameter.GREATERTHANOREQUALTO, HCFOperator.NONE);
 		
-		assertEquals(12, entities.size());
+		assertEquals(11, entities.size());
+	}
+	
+	@Test
+	void testSearchWithOperator1() {
+		
+		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(null, 
+				"age", 30, HCFParameter.EQUAL, HCFOperator.NONE,
+				"age", 32, HCFParameter.EQUAL, HCFOperator.OR,
+				"age", 23, HCFParameter.LESSTHANOREQUALTO, HCFOperator.OR);
+		
+		assertEquals(5, entities.size());
+		
+	}
+	
+	@Test
+	void testSearchWithOperator2() {
+		
+		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(null, 
+				"name", "%1%", HCFParameter.LIKE, HCFOperator.AND,
+				"age", 25, HCFParameter.GREATERTHANOREQUALTO, HCFOperator.AND);
+		
+		assertEquals(10, entities.size());
+	}
+	
+	@Test
+	void testSearchWithOrder() {
+		
+		List<TestEntity> entities = new HCFConnection<>(TestEntity.class).search(
+				Arrays.asList(new HCFOrder(false, "id", null, 0)),
+				"age", null, HCFParameter.ISNOTNULL, HCFOperator.NONE);
+		
+		assertEquals(20, entities.size());
+		assertTrue(entities.get(0).getId() > entities.get(entities.size() - 1).getAge());
 		
 	}
 	

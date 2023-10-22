@@ -11,8 +11,11 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.hcf.test.entities.TestEntity;
+
 import br.com.hcf.HCFConnection;
 import br.com.hcf.HCFOrder;
+import br.com.hcf.HCFSearch;
 import br.com.hcf.enums.HCFOperator;
 import br.com.hcf.enums.HCFParameter;
 
@@ -140,9 +143,12 @@ class HCFUtilitiesTest {
 		List<Object> distinct1 = new HCFConnection<>(TestEntity.class).getDistinctField("age");
 		List<Object> distinct2 = new HCFConnection<>(TestEntity.class).getDistinctField("age",
 				"age", "25", HCFParameter.NOTEQUAL, HCFOperator.NONE);
+		List<Object> distinct3 = new HCFConnection<>(TestEntity.class).getDistinctField("age",
+				Arrays.asList(new HCFSearch("age", "25", HCFParameter.NOTEQUAL, HCFOperator.NONE)));
 		
 		assertEquals(3, distinct1.size());
 		assertEquals(2, distinct2.size());
+		assertEquals(2, distinct3.size());
 		
 		new HCFConnection<>(TestEntity.class).delete(entities, false);
 	}

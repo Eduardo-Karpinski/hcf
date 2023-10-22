@@ -1,4 +1,4 @@
-package com.hcf.test;
+package com.hcf.test.entities;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

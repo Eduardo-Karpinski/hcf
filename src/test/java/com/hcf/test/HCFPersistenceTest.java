@@ -13,6 +13,8 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.hcf.test.entities.TestEntity;
+
 import br.com.hcf.HCFConnection;
 import br.com.hcf.HCFSearch;
 import br.com.hcf.enums.HCFOperator;
