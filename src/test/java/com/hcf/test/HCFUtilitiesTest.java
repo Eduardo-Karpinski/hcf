@@ -2,6 +2,7 @@ package com.hcf.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,13 +12,12 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.hcf.HCFConnection;
+import com.hcf.HCFOrder;
+import com.hcf.HCFSearch;
+import com.hcf.enums.HCFOperator;
+import com.hcf.enums.HCFParameter;
 import com.hcf.test.entities.TestEntity;
-
-import br.com.hcf.HCFConnection;
-import br.com.hcf.HCFOrder;
-import br.com.hcf.HCFSearch;
-import br.com.hcf.enums.HCFOperator;
-import br.com.hcf.enums.HCFParameter;
 
 @DisplayName("HCFUtilitiesTest")
 class HCFUtilitiesTest {
@@ -25,10 +25,10 @@ class HCFUtilitiesTest {
 	@Test
 	void testFirstAndLast() {
 		
-		TestEntity entity1 = new TestEntity(null, "Test 1", 21, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity2 = new TestEntity(null, "Test 2", 25, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity3 = new TestEntity(null, "Test 3", 27, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity4 = new TestEntity(null, "Test 4", 27, new BigDecimal(1234.56), LocalDateTime.now());
+		TestEntity entity1 = new TestEntity(null, "Test 1", 21, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity2 = new TestEntity(null, "Test 2", 25, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity3 = new TestEntity(null, "Test 3", 27, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity4 = new TestEntity(null, "Test 4", 27, new BigDecimal(1234.56), LocalDateTime.now(), false);
 		
 		List<TestEntity> entities = Arrays.asList(entity1, entity2, entity3, entity4);
 		
@@ -49,10 +49,10 @@ class HCFUtilitiesTest {
 	@Test
 	void testCount() {
 		
-		TestEntity entity1 = new TestEntity(null, "Test 1", 21, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity2 = new TestEntity(null, "Test 2", 25, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity3 = new TestEntity(null, "Test 3", 27, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity4 = new TestEntity(null, "Test 4", 27, new BigDecimal(1234.56), LocalDateTime.now());
+		TestEntity entity1 = new TestEntity(null, "Test 1", 21, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity2 = new TestEntity(null, "Test 2", 25, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity3 = new TestEntity(null, "Test 3", 27, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity4 = new TestEntity(null, "Test 4", 27, new BigDecimal(1234.56), LocalDateTime.now(), false);
 		
 		List<TestEntity> entities = Arrays.asList(entity1, entity2, entity3, entity4);
 		new HCFConnection<>(TestEntity.class).save(entities, false);
@@ -113,10 +113,10 @@ class HCFUtilitiesTest {
 	@Test
 	void testGetObjectBySQL() {
 		
-		TestEntity entity1 = new TestEntity(null, "Test 1", 21, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity2 = new TestEntity(null, "Test 2", 25, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity3 = new TestEntity(null, "Test 3", 27, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity4 = new TestEntity(null, "Test 4", 27, new BigDecimal(1234.56), LocalDateTime.now());
+		TestEntity entity1 = new TestEntity(null, "Test 1", 21, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity2 = new TestEntity(null, "Test 2", 25, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity3 = new TestEntity(null, "Test 3", 27, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity4 = new TestEntity(null, "Test 4", 27, new BigDecimal(1234.56), LocalDateTime.now(), false);
 		
 		List<TestEntity> entities = Arrays.asList(entity1, entity2, entity3, entity4);
 		new HCFConnection<>(TestEntity.class).save(entities, false);
@@ -132,10 +132,10 @@ class HCFUtilitiesTest {
 	@Test
 	void testGetDistinctField() {
 		
-		TestEntity entity1 = new TestEntity(null, "Test 1", 21, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity2 = new TestEntity(null, "Test 2", 25, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity3 = new TestEntity(null, "Test 3", 27, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity4 = new TestEntity(null, "Test 4", 27, new BigDecimal(1234.56), LocalDateTime.now());
+		TestEntity entity1 = new TestEntity(null, "Test 1", 21, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity2 = new TestEntity(null, "Test 2", 25, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity3 = new TestEntity(null, "Test 3", 27, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity4 = new TestEntity(null, "Test 4", 27, new BigDecimal(1234.56), LocalDateTime.now(), false);
 		
 		List<TestEntity> entities = Arrays.asList(entity1, entity2, entity3, entity4);
 		new HCFConnection<>(TestEntity.class).save(entities, false);
@@ -149,6 +149,25 @@ class HCFUtilitiesTest {
 		assertEquals(3, distinct1.size());
 		assertEquals(2, distinct2.size());
 		assertEquals(2, distinct3.size());
+		
+		new HCFConnection<>(TestEntity.class).delete(entities, false);
+	}
+	
+	@Test
+	void testSum() {
+		
+		TestEntity entity1 = new TestEntity(null, "Test 1", 20, new BigDecimal(1000), LocalDateTime.now(), false);
+		TestEntity entity2 = new TestEntity(null, "Test 2", 20, new BigDecimal(1000), LocalDateTime.now(), false);
+		TestEntity entity3 = new TestEntity(null, "Test 3", 20, new BigDecimal(1000), LocalDateTime.now(), true);
+		
+		List<TestEntity> entities = Arrays.asList(entity1, entity2, entity3);
+		new HCFConnection<>(TestEntity.class).save(entities, false);
+
+		List<Object> sum = new HCFConnection<>(TestEntity.class).sum(null, Arrays.asList("salary", "age"),
+				"isAdmin", null, HCFParameter.FALSE, HCFOperator.NONE);
+		
+		assertTrue(new BigDecimal(2000.00).compareTo((BigDecimal) sum.get(0)) == 0); 
+		assertEquals(40L, sum.get(1));
 		
 		new HCFConnection<>(TestEntity.class).delete(entities, false);
 	}

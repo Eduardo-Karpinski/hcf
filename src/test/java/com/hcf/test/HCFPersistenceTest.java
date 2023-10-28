@@ -13,12 +13,11 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.hcf.HCFConnection;
+import com.hcf.HCFSearch;
+import com.hcf.enums.HCFOperator;
+import com.hcf.enums.HCFParameter;
 import com.hcf.test.entities.TestEntity;
-
-import br.com.hcf.HCFConnection;
-import br.com.hcf.HCFSearch;
-import br.com.hcf.enums.HCFOperator;
-import br.com.hcf.enums.HCFParameter;
 
 /**
  * @author Eduardo
@@ -28,7 +27,7 @@ import br.com.hcf.enums.HCFParameter;
 class HCFPersistenceTest {
 
 	private TestEntity getObject() {
-		return new TestEntity(null, "Test 1", 20, new BigDecimal(1234.56), LocalDateTime.now());
+		return new TestEntity(null, "Test 1", 20, new BigDecimal(1234.56), LocalDateTime.now(), false);
 	}
 
 	@Test
@@ -50,10 +49,10 @@ class HCFPersistenceTest {
 
 	@Test
 	void testAll() {
-		TestEntity entity1 = new TestEntity(null, "Test 1", 20, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity2 = new TestEntity(null, "Test 2", 20, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity3 = new TestEntity(null, "Test 3", 20, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity4 = new TestEntity(null, "Test 4", 20, new BigDecimal(1234.56), LocalDateTime.now());
+		TestEntity entity1 = new TestEntity(null, "Test 1", 20, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity2 = new TestEntity(null, "Test 2", 20, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity3 = new TestEntity(null, "Test 3", 20, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity4 = new TestEntity(null, "Test 4", 20, new BigDecimal(1234.56), LocalDateTime.now(), false);
 
 		new HCFConnection<>(TestEntity.class).save(Arrays.asList(entity1, entity2, entity3, entity4), false);
 
@@ -78,10 +77,10 @@ class HCFPersistenceTest {
 
 	@Test
 	void testMassiveUpdate() {
-		TestEntity entity1 = new TestEntity(null, "Test 1", 21, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity2 = new TestEntity(null, "Test 2", 25, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity3 = new TestEntity(null, "Test 3", 27, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity4 = new TestEntity(null, "Test 4", 27, new BigDecimal(1234.56), LocalDateTime.now());
+		TestEntity entity1 = new TestEntity(null, "Test 1", 21, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity2 = new TestEntity(null, "Test 2", 25, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity3 = new TestEntity(null, "Test 3", 27, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity4 = new TestEntity(null, "Test 4", 27, new BigDecimal(1234.56), LocalDateTime.now(), false);
 		
 		List<TestEntity> entities = Arrays.asList(entity1, entity2, entity3, entity4);
 		
@@ -107,10 +106,10 @@ class HCFPersistenceTest {
 	@Test
 	void testMassiveDelete() {
 		
-		TestEntity entity1 = new TestEntity(null, "Test 1", 21, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity2 = new TestEntity(null, "Test 2", 25, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity3 = new TestEntity(null, "Test 3", 27, new BigDecimal(1234.56), LocalDateTime.now());
-		TestEntity entity4 = new TestEntity(null, "Test 4", 27, new BigDecimal(1234.56), LocalDateTime.now());
+		TestEntity entity1 = new TestEntity(null, "Test 1", 21, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity2 = new TestEntity(null, "Test 2", 25, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity3 = new TestEntity(null, "Test 3", 27, new BigDecimal(1234.56), LocalDateTime.now(), false);
+		TestEntity entity4 = new TestEntity(null, "Test 4", 27, new BigDecimal(1234.56), LocalDateTime.now(), false);
 		
 		List<TestEntity> entities = Arrays.asList(entity1, entity2, entity3, entity4);
 		

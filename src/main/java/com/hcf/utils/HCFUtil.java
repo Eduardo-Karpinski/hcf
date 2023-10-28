@@ -1,4 +1,4 @@
-package br.com.hcf.utils;
+package com.hcf.utils;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;

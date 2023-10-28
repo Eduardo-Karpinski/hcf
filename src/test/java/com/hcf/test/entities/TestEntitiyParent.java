@@ -11,7 +11,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
-import br.com.hcf.annotations.HCFRelationship;
+import com.hcf.annotations.HCFRelationship;
 
 @Entity
 @HCFRelationship

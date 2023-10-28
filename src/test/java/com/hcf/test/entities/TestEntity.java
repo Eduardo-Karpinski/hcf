@@ -19,16 +19,18 @@ public class TestEntity {
 	private Integer age;
 	private BigDecimal salary;
 	private LocalDateTime birthDate;
+	private Boolean isAdmin;
 
 	public TestEntity() {
 	}
 
-	public TestEntity(Long id, String name, Integer age, BigDecimal salary, LocalDateTime birthDate) {
+	public TestEntity(Long id, String name, Integer age, BigDecimal salary, LocalDateTime birthDate, Boolean isAdmin) {
 		this.id = id;
 		this.name = name;
 		this.age = age;
 		this.salary = salary;
 		this.birthDate = birthDate;
+		this.isAdmin = isAdmin;
 	}
 
 	public Long getId() {
@@ -71,9 +73,17 @@ public class TestEntity {
 		this.birthDate = birthDate;
 	}
 
+	public Boolean getIsAdmin() {
+		return isAdmin;
+	}
+
+	public void setIsAdmin(Boolean isAdmin) {
+		this.isAdmin = isAdmin;
+	}
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(age, birthDate, id, name, salary);
+		return Objects.hash(age, birthDate, id, isAdmin, name, salary);
 	}
 
 	@Override
@@ -86,14 +96,14 @@ public class TestEntity {
 			return false;
 		TestEntity other = (TestEntity) obj;
 		return Objects.equals(age, other.age) && Objects.equals(birthDate, other.birthDate)
-				&& Objects.equals(id, other.id) && Objects.equals(name, other.name)
-				&& Objects.equals(salary, other.salary);
+				&& Objects.equals(id, other.id) && Objects.equals(isAdmin, other.isAdmin)
+				&& Objects.equals(name, other.name) && Objects.equals(salary, other.salary);
 	}
 
 	@Override
 	public String toString() {
 		return "TestEntity [id=" + id + ", name=" + name + ", age=" + age + ", salary=" + salary + ", birthDate="
-				+ birthDate + "]";
+				+ birthDate + ", isAdmin=" + isAdmin + "]";
 	}
-	
+
 }

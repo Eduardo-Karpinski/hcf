@@ -9,18 +9,10 @@ HCF is a generic DAO for database persistence.
     <dependency>
         <groupId>br.com.hcf</groupId>
 	<artifactId>hcf-data</artifactId>
-	<version>3.4.5</version>
+	<version>1.0.0</version>
     </dependency>
     ...
 </dependencies>
-```
-```
-<repositories>
-    <repository>
-        <id>myMavenRepo.read</id>
-        <url>https://mymavenrepo.com/repo/N6enl93StT9D1JnAX2qX/</url>
-    </repository>
-</repositories>
 ```
 
 ## hibernate.properties

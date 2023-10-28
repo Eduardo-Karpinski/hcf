@@ -1,4 +1,4 @@
-package br.com.hcf;
+package com.hcf;
 		
 import java.lang.reflect.Field;
 import java.sql.Connection;
@@ -16,6 +16,7 @@ import java.util.stream.IntStream;
 import javax.persistence.ManyToMany;
 import javax.persistence.NoResultException;
 import javax.persistence.OneToMany;
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
@@ -27,7 +28,6 @@ import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Selection;
 import javax.persistence.criteria.Subquery;
 
 import org.hibernate.Session;
@@ -36,10 +36,10 @@ import org.hibernate.Transaction;
 import org.hibernate.query.NativeQuery;
 import org.hibernate.resource.transaction.spi.TransactionStatus;
 
-import br.com.hcf.annotations.HCFRelationship;
-import br.com.hcf.enums.HCFOperator;
-import br.com.hcf.enums.HCFParameter;
-import br.com.hcf.utils.HCFUtil;
+import com.hcf.annotations.HCFRelationship;
+import com.hcf.enums.HCFOperator;
+import com.hcf.enums.HCFParameter;
+import com.hcf.utils.HCFUtil;
 
 public final class HCFConnection<T, E> {
 	
@@ -259,20 +259,27 @@ public final class HCFConnection<T, E> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public List<Object[]> bringAddition(List<HCFOrder> orders, List<String> Fields, E... parameters) {
+	public List<Object> sum(List<HCFOrder> orders, List<String> fields, E... parameters) {
 		try {
 			CriteriaBuilder builder = session.getCriteriaBuilder();
-			CriteriaQuery<Object[]> criteria = builder.createQuery(Object[].class);
+			CriteriaQuery<Tuple> criteria = builder.createTupleQuery();
 			Root<T> root = criteria.from(classe);
-			List<Selection<?>> selections = new ArrayList<>();
+			
+			List<Expression<? extends Number>> expressions = new ArrayList<>();
+			
+			for (String column : fields) {
+				Expression<? extends Number> expression = builder.sum(root.get(column));
+				expression.alias(column);
+				expressions.add(expression);
+			}
+			
 			order(orders, builder, criteria, root);
 			applyPredicate(builder, criteria, root, parameters);
-			criteria.getGroupList().forEach(selections::add);
-			Fields.forEach(field -> selections.add(builder.sum(root.get(field))));
-			criteria.multiselect(selections).where(predicates.toArray(Predicate[]::new));
 			
-			// limitResults method doesn't accept TypedQuery<Object[]>, maybe in the near future I'll remove the type of TypedQuery
-			TypedQuery<Object[]> query;
+			criteria.multiselect(expressions.toArray(new Expression[0])).where(predicates.toArray(Predicate[]::new));
+			
+			// limitResults method doesn't accept TypedQuery<Tuple>, maybe in the near future I'll remove the type of TypedQuery
+			TypedQuery<Tuple> query;
 			Integer limit = null;
 			Integer offset = 0;
 			try {
@@ -282,7 +289,16 @@ public final class HCFConnection<T, E> {
 			} catch (Exception ignore) {
 				query = session.createQuery(criteria);
 			}
-			return query.getResultList();
+	        
+	        Tuple tuple = query.getSingleResult();
+
+	        List<Object> result = expressions.stream()
+	        	    .map(expression -> tuple.get(expression.getAlias(), Number.class))
+	        	    .collect(Collectors.toList());
+	        
+	        return result;
+		} catch (NoResultException e) {
+			return null;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;

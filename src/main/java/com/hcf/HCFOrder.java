@@ -1,4 +1,4 @@
-package br.com.hcf;
+package com.hcf;
 
 import java.util.Objects;
 

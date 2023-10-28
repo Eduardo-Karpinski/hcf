@@ -1,4 +1,4 @@
-package br.com.hcf;
+package com.hcf;
 
 import java.io.File;
 import java.util.Arrays;
@@ -16,7 +16,7 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 
-import br.com.hcf.utils.HCFUtil;
+import com.hcf.utils.HCFUtil;
 
 public final class HCFFactory {
 
@@ -29,7 +29,7 @@ public final class HCFFactory {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> HCFFactory.getInstance().shutdown()));
 		
 		HCFUtil.getLogger().info("################################################");
-		HCFUtil.getLogger().info("Hibernate Connection facilitator - Version 3.4.5");
+		HCFUtil.getLogger().info("Hibernate Connection facilitator - Version 1.0.0");
 		HCFUtil.getLogger().info("Eduardo William - karpinskipriester@gmail.com");
 		HCFUtil.getLogger().info("################################################");
 	}
