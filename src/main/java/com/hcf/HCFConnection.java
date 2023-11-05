@@ -3,7 +3,6 @@ package com.hcf;
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -12,23 +11,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import javax.persistence.ManyToMany;
-import javax.persistence.NoResultException;
-import javax.persistence.OneToMany;
-import javax.persistence.Tuple;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaDelete;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.CriteriaUpdate;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.Order;
-import javax.persistence.criteria.Path;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Subquery;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -40,6 +22,23 @@ import com.hcf.annotations.HCFRelationship;
 import com.hcf.enums.HCFOperator;
 import com.hcf.enums.HCFParameter;
 import com.hcf.utils.HCFUtil;
+
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaDelete;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.CriteriaUpdate;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Order;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 public final class HCFConnection<T, E> {
 	
@@ -94,7 +93,7 @@ public final class HCFConnection<T, E> {
 			Root<T> root = criteria.from(classe);
 			applyPredicate(builder, null, root, parameters); // criteria is not necessary for this action
 			criteria.where(predicates.toArray(Predicate[]::new));
-			return session.createQuery(criteria).executeUpdate();
+			return session.createMutationQuery(criteria).executeUpdate();
 		} catch (Exception e) {
 			e.printStackTrace();
 			if (transaction != null) transaction.rollback();
@@ -112,7 +111,7 @@ public final class HCFConnection<T, E> {
 			Root<T> root = criteria.from(classe);
 			applyPredicate(builder, null, root, hcfSearchs); // criteria is not necessary for this action
 			criteria.where(predicates.toArray(Predicate[]::new));
-			return session.createQuery(criteria).executeUpdate();
+			return session.createMutationQuery(criteria).executeUpdate();
 		} catch (Exception e) {
 			e.printStackTrace();
 			if (transaction != null) transaction.rollback();
@@ -133,7 +132,7 @@ public final class HCFConnection<T, E> {
 			applyPredicate(builder, null, root, parameters); // criteria is not necessary for this action
 			values.forEach((attributeName, value) -> criteria.set(attributeName, value));
 			criteria.where(predicates.toArray(Predicate[]::new));
-			return session.createQuery(criteria).executeUpdate();
+			return session.createMutationQuery(criteria).executeUpdate();
 		} catch (Exception e) {
 			e.printStackTrace();
 			if (transaction != null) transaction.rollback();
@@ -152,7 +151,7 @@ public final class HCFConnection<T, E> {
 			applyPredicate(builder, null, root, hcfSearchs); // criteria is not necessary for this action
 			values.forEach((attributeName, value) -> criteria.set(attributeName, value));
 			criteria.where(predicates.toArray(Predicate[]::new));
-			return session.createQuery(criteria).executeUpdate();
+			return session.createMutationQuery(criteria).executeUpdate();
 		} catch (Exception e) {
 			e.printStackTrace();
 			if (transaction != null) transaction.rollback();
@@ -227,7 +226,7 @@ public final class HCFConnection<T, E> {
 			CriteriaDelete<T> criteria = builder.createCriteriaDelete(classe);
 			Root<T> root = criteria.from(classe);
 			criteria.where(builder.equal(root.get(HCFUtil.getId(classe)), id));
-			return session.createQuery(criteria).executeUpdate();
+			return session.createMutationQuery(criteria).executeUpdate();
 		} catch (Exception e) {
 			e.printStackTrace();
 			if (transaction != null) transaction.rollback();
@@ -338,7 +337,7 @@ public final class HCFConnection<T, E> {
 		try {
 			session = HCFFactory.getInstance().getFactory().openSession();
 			transaction = session.beginTransaction();
-			session.createNativeQuery(sql).executeUpdate();
+			session.createNativeQuery(sql, Object.class).executeUpdate();
 		} catch (Exception e) {
 			if (transaction != null) transaction.rollback();
 			e.printStackTrace();
@@ -376,7 +375,7 @@ public final class HCFConnection<T, E> {
 		Session session = null;
 		try {
 			session = HCFFactory.getInstance().getFactory().openSession();
-			return session.createNativeQuery(sql).getResultList();
+			return session.createNativeQuery(sql, Object.class).getResultList();
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -536,9 +535,9 @@ public final class HCFConnection<T, E> {
 			transaction = session.beginTransaction();
 			entities.forEach(e -> {
 				if (isSaveOrUpdate) {
-					session.saveOrUpdate(e);
+					session.merge(e);
 				} else {
-					session.delete(e);
+					session.remove(e);
 				}
 				if (cont.incrementAndGet() == 20) {
 					session.flush();
@@ -565,43 +564,39 @@ public final class HCFConnection<T, E> {
 		}
 	}
 	
-	private void getRelationshipByHCF(T father) {
+	@SuppressWarnings("unchecked")
+	private void getRelationshipByHCF(T parentObject) {
 		try {
-			Class<?> fatherClass = father.getClass();
-			if(fatherClass.getAnnotation(HCFRelationship.class) != null) {
-				Arrays.asList(fatherClass.getDeclaredFields()).stream()
-				.filter(f -> Arrays.asList(f.getAnnotations()).stream().anyMatch(a ->
-						a instanceof OneToMany ||
-						a instanceof ManyToMany))
-				.map(Field::getName)
-				.forEach(table -> {
-					try {
-						String nameField = HCFUtil.getId(fatherClass);
-						Field idField = fatherClass.getDeclaredField(nameField);
-						
-						idField.setAccessible(true);
-						Object id = idField.get(father);
-						idField.setAccessible(false);
-						
-						Field list = fatherClass.getDeclaredField(table);
-			            list.setAccessible(true);
+			Class<?> parentClass = parentObject.getClass();
+			if (parentClass.getAnnotation(HCFRelationship.class) != null) {
+				
+				String idFieldName = HCFUtil.getId(parentClass);
+	            Field idField = parentClass.getDeclaredField(idFieldName);
+	            
+	            idField.setAccessible(true);
+	            Object id = idField.get(parentObject);
+	            idField.setAccessible(false);
+	            
+	            for (Field field : parentClass.getDeclaredFields()) {
+	                if (field.isAnnotationPresent(OneToMany.class) || field.isAnnotationPresent(ManyToMany.class)) {
+	                    
+	                	field.setAccessible(true);
+	                    
+	                	CriteriaBuilder builder = session.getCriteriaBuilder();
+						CriteriaQuery<Object> criteria = builder.createQuery();
+						Root<?> root = criteria.from(parentClass);
+						Join<?, T> join = root.join(field.getName());
+						criteria.select(join).where(builder.equal(root.get(idFieldName), id));
+						TypedQuery<Object> query = session.createQuery(criteria);
+			            List<Object> resultList = query.getResultList();
 			            
-			            CriteriaBuilder builder = session.getCriteriaBuilder();
-						CriteriaQuery<T> criteria = builder.createQuery(classe);
-						Root<?> root = criteria.from(fatherClass);
-						Join<?, T> join = root.join(table);
-						criteria.select(join).where(builder.equal(root.get(nameField), id));
-						TypedQuery<T> query = session.createQuery(criteria);
-						
-			            List<T> resultList = query.getResultList();
-			            resultList.forEach(t -> getRelationshipByHCF(t));
+			            resultList.forEach(t -> getRelationshipByHCF((T) t));
 			            
-						list.set(father, resultList);
-			            list.setAccessible(false);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				});
+			            field.set(parentObject, resultList);
+			            field.setAccessible(false);
+	                }
+	            }
+	            
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

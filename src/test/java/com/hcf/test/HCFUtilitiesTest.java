@@ -167,7 +167,7 @@ class HCFUtilitiesTest {
 				"isAdmin", null, HCFParameter.FALSE, HCFOperator.NONE);
 		
 		assertTrue(new BigDecimal(2000.00).compareTo((BigDecimal) sum.get(0)) == 0); 
-		assertEquals(40L, sum.get(1));
+		assertEquals(40, sum.get(1));
 		
 		new HCFConnection<>(TestEntity.class).delete(entities, false);
 	}

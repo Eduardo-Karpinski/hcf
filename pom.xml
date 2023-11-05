@@ -18,7 +18,7 @@
 	</developers>
 	<dependencies>
 		<dependency>
-			<groupId>org.hibernate</groupId>
+			<groupId>org.hibernate.orm</groupId>
 			<artifactId>hibernate-core</artifactId>
 			<version>${hibernate.version}</version>
 		</dependency>
@@ -53,7 +53,7 @@
 	</build>
 	<properties>
 		<java.version>11</java.version>
-		<hibernate.version>5.6.8.Final</hibernate.version>
+		<hibernate.version>6.3.1.Final</hibernate.version>
 		<reflections.version>0.10.2</reflections.version>
 		<junit.version>5.10.0</junit.version>
 		<mysql.version>8.1.0</mysql.version>

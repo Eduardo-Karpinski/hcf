@@ -8,7 +8,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.MetadataSources;
