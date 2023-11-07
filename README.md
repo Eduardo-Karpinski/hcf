@@ -1,7 +1,6 @@
-# About
-
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.eduardo-karpinski/hcf-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.eduardo-karpinski/hcf-core)
 
+# About
 
 HCF is a generic DAO for database persistence.
 
