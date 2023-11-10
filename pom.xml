@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.eduardo-karpinski</groupId>
 	<artifactId>hcf-core</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 	<name>Hibernate Connector Facilitator</name>
 	<description>Generic DAO for database persistence.</description>
 	<url>https://github.com/Eduardo-Karpinski/hcf</url>

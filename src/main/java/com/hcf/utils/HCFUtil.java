@@ -6,10 +6,10 @@ import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import org.reflections.Reflections;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-
-import org.reflections.Reflections;
 
 public final class HCFUtil {
 	
@@ -21,12 +21,12 @@ public final class HCFUtil {
 	
 	public static <T> String getId(Class<T> classe) {
 		Field[] fields = classe.getDeclaredFields();
-		
-		for (int i = 0; i < fields.length; i++) {
-			if (fields[i].isAnnotationPresent(Id.class)) {
-				return fields[i].getName();
-			}
-		}
+
+        for (Field field : fields) {
+            if (field.isAnnotationPresent(Id.class)) {
+                return field.getName();
+            }
+        }
 			
 		if (classe.getSuperclass().equals(Object.class)) {
 			throw new RuntimeException(Id.class + " not found in fields of " + classe);
@@ -36,12 +36,12 @@ public final class HCFUtil {
 	}
 		
 	public static Set<Class<?>> getAnnotatedClasses() {
-		Set<String> packages = Arrays.asList(Thread.currentThread().getContextClassLoader().getDefinedPackages()).stream()
+		Set<String> packages = Arrays.stream(Thread.currentThread().getContextClassLoader().getDefinedPackages())
 				.map(Package::getName)
 				.collect(Collectors.toSet());
-		HCFUtil.getLogger().info("Packages To Read - " + packages);
+		logger.info("Packages To Read - " + packages);
 		Set<Class<?>> typesAnnotatedWith = getEntities(packages);
-		HCFUtil.getLogger().info("Annotated Classes - " + typesAnnotatedWith);
+		logger.info("Annotated Classes - " + typesAnnotatedWith);
 		return typesAnnotatedWith;
 	}
 
@@ -50,7 +50,27 @@ public final class HCFUtil {
 		return reflections.getTypesAnnotatedWith(Entity.class);
 	}
 	
+	public static void showError(Exception exception) {
+		logger.severe("[HCF-ERROR] Exception caught:");
+
+		String exceptionType = exception.getClass().getSimpleName();
+		String message = exception.getMessage();
+
+		StringBuilder stackTraceBuilder = new StringBuilder();
+		for (StackTraceElement element : exception.getStackTrace()) {
+			stackTraceBuilder.append("\tat ").append(element.toString()).append("\n");
+		}
+
+		String stackTrace = stackTraceBuilder.toString();
+
+		logger.severe("[HCF-ERROR] Exception Type: " + exceptionType);
+		logger.severe("[HCF-ERROR] Message: " + message);
+		logger.severe("[HCF-ERROR] StackTrace:\n" + stackTrace);
+	}
+	
 	public static Logger getLogger() {
 		return logger;
 	}
+
+	
 }
