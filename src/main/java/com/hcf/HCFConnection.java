@@ -67,19 +67,19 @@ public final class HCFConnection<T, E> {
     }
 
     public void save(T entity) {
-        save(Collections.singletonList(entity), false);
+        save(Collections.singletonList(entity));
     }
 
-    public void save(List<T> entities, Boolean commitInError) {
-        persist(entities, commitInError, true);
+    public void save(List<T> entities) {
+        persist(entities, true);
     }
 
     public void delete(T entity) {
-        delete(Collections.singletonList(entity), false);
+        delete(Collections.singletonList(entity));
     }
 
-    public void delete(List<T> entities, Boolean commitInError) {
-        persist(entities, commitInError, false);
+    public void delete(List<T> entities) {
+        persist(entities, false);
     }
 
     @SuppressWarnings("unchecked")
@@ -257,7 +257,7 @@ public final class HCFConnection<T, E> {
     }
 
     @SuppressWarnings("unchecked")
-    public List<Object> sum(List<HCFOrder> orders, List<String> fields, E... parameters) {
+    public List<Object> sum(List<String> fields, E... parameters) {
         try {
             CriteriaBuilder builder = session.getCriteriaBuilder();
             CriteriaQuery<Tuple> criteria = builder.createTupleQuery();
@@ -271,22 +271,11 @@ public final class HCFConnection<T, E> {
                 expressions.add(expression);
             }
 
-            order(orders, builder, criteria, root);
             applyPredicate(builder, criteria, root, parameters);
 
             criteria.multiselect(expressions.toArray(new Expression[0])).where(predicates.toArray(Predicate[]::new));
 
-            // limitResults method doesn't accept TypedQuery<Tuple>, maybe in the near future I'll remove the type of TypedQuery
-            TypedQuery<Tuple> query;
-            Integer limit = null;
-            int offset = 0;
-            try {
-                limit = orders.stream().map(HCFOrder::getLimit).filter(Objects::nonNull).findFirst().orElse(null);
-                offset = orders.stream().map(HCFOrder::getOffset).filter(Objects::nonNull).findFirst().orElse(0);
-                query = session.createQuery(criteria).setFirstResult(offset).setMaxResults(limit);
-            } catch (Exception ignore) {
-                query = session.createQuery(criteria);
-            }
+            TypedQuery<Tuple> query = session.createQuery(criteria);
 
             Tuple tuple = query.getSingleResult();
 
@@ -527,28 +516,22 @@ public final class HCFConnection<T, E> {
         }
     }
 
-    private void persist(List<T> entities, Boolean commitInError, boolean isSaveOrUpdate) {
+    private void persist(List<T> entities, boolean isSaveOrUpdate) {
         try {
             transaction = session.beginTransaction();
-            entities.forEach(e -> {
+
+            for (T entity : entities) {
                 if (isSaveOrUpdate) {
-                    session.merge(e);
+                    session.merge(entity);
                 } else {
-                    session.remove(e);
+                    session.remove(entity);
                 }
-            });
+            }
+
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) {
-                if (commitInError) {
-                    try {
-                        transaction.commit();
-                    } catch (Exception e2) {
-                        throw e;
-                    }
-                } else {
-                    transaction.rollback();
-                }
+                transaction.rollback();
             }
             throw e;
         } finally {
@@ -572,8 +555,6 @@ public final class HCFConnection<T, E> {
                 for (Field field : parentClass.getDeclaredFields()) {
                     if (field.isAnnotationPresent(OneToMany.class) || field.isAnnotationPresent(ManyToMany.class)) {
 
-                        field.setAccessible(true);
-
                         CriteriaBuilder builder = session.getCriteriaBuilder();
                         CriteriaQuery<Object> criteria = builder.createQuery();
                         Root<?> root = criteria.from(parentClass);
@@ -584,6 +565,7 @@ public final class HCFConnection<T, E> {
 
                         resultList.forEach(t -> getRelationshipByHCF((T) t));
 
+                        field.setAccessible(true);
                         field.set(parentObject, resultList);
                         field.setAccessible(false);
                     }

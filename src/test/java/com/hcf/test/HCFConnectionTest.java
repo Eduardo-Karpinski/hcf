@@ -17,54 +17,54 @@ import com.hcf.test.entities.TestEntity;
 @DisplayName("HCFConnectionTest")
 class HCFConnectionTest {
 
-	@Test
-	void testConstructorWithPersistentClass() {
-		long count = new HCFConnection<>(TestEntity.class).count();
-		assertEquals(0, count);
-	}
+    @Test
+    void testConstructorWithPersistentClass() {
+        long count = new HCFConnection<>(TestEntity.class).count();
+        assertEquals(0, count);
+    }
 
-	@Test
-	void testConstructorWithPersistentClassAndConnection() {
-		long count = new HCFConnection<>(TestEntity.class, createConnection()).count();
-		assertEquals(0, count);
-	}
+    @Test
+    void testConstructorWithPersistentClassAndConnection() {
+        long count = new HCFConnection<>(TestEntity.class, createConnection()).count();
+        assertEquals(0, count);
+    }
 
-	@Test
-	void testConstructorWithPersistentClassAndSessionFactory() {
-		long count = new HCFConnection<>(TestEntity.class, createSessionFactory()).count();
-		assertEquals(0, count);
-	}
+    @Test
+    void testConstructorWithPersistentClassAndSessionFactory() {
+        long count = new HCFConnection<>(TestEntity.class, createSessionFactory()).count();
+        assertEquals(0, count);
+    }
 
-	@Test
-	void testConstructorWithPersistentClassAndSession() {
-		long count = new HCFConnection<>(TestEntity.class, createSession()).count();
-		assertEquals(0, count);
-	}
+    @Test
+    void testConstructorWithPersistentClassAndSession() {
+        long count = new HCFConnection<>(TestEntity.class, createSession()).count();
+        assertEquals(0, count);
+    }
 
-	private Connection createConnection() {
-		Connection connection = null;
-		
-		try {
-			Class.forName("com.mysql.cj.jdbc.Driver");
+    private Connection createConnection() {
+        Connection connection = null;
 
-			String jdbcUrl = "jdbc:mysql://localhost:3306/hcf";
-			String username = "root";
-			String password = "root";
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
 
-			connection = DriverManager.getConnection(jdbcUrl, username, password);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		return connection;
-	}
+            String jdbcUrl = "jdbc:mysql://localhost:3306/hcf";
+            String username = "root";
+            String password = "root";
 
-	private SessionFactory createSessionFactory() {
-		return HCFFactory.getInstance().getFactory();
-	}
+            connection = DriverManager.getConnection(jdbcUrl, username, password);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-	private Session createSession() {
-		return HCFFactory.getInstance().getFactory().openSession();
-	}
+        return connection;
+    }
+
+    private SessionFactory createSessionFactory() {
+        return HCFFactory.getInstance().getFactory();
+    }
+
+    private Session createSession() {
+        return HCFFactory.getInstance().getFactory().openSession();
+    }
 
 }
