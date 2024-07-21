@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -48,12 +47,12 @@ public final class HCFConnection<T, E> {
 
     public HCFConnection(Class<T> persistentClass) {
         this.persistentClass = Optional.ofNullable(persistentClass).orElseThrow(() -> new NullPointerException("PersistentClass is null"));
-        session = HCFFactory.getInstance().getFactory().openSession();
+        session = HCFFactory.INSTANCE.getFactory().openSession();
     }
 
     public HCFConnection(Class<T> persistentClass, Connection connection) {
         this.persistentClass = Optional.ofNullable(persistentClass).orElseThrow(() -> new NullPointerException("PersistentClass is null"));
-        session = HCFFactory.getInstance().getFactory().withOptions().connection(Optional.ofNullable(connection).orElseThrow(() -> new NullPointerException("Connection is null"))).openSession();
+        session = HCFFactory.INSTANCE.getFactory().withOptions().connection(Optional.ofNullable(connection).orElseThrow(() -> new NullPointerException("Connection is null"))).openSession();
     }
 
     public HCFConnection(Class<T> persistentClass, SessionFactory sessionFactory) {
@@ -322,7 +321,7 @@ public final class HCFConnection<T, E> {
         Transaction transaction = null;
         Session session = null;
         try {
-            session = HCFFactory.getInstance().getFactory().openSession();
+            session = HCFFactory.INSTANCE.getFactory().openSession();
             transaction = session.beginTransaction();
             session.createNativeQuery(sql, Object.class).executeUpdate();
         } catch (Exception e) {
@@ -361,7 +360,7 @@ public final class HCFConnection<T, E> {
     public static List<?> getElementsBySQL(String sql) {
         Session session = null;
         try {
-            session = HCFFactory.getInstance().getFactory().openSession();
+            session = HCFFactory.INSTANCE.getFactory().openSession();
             return session.createNativeQuery(sql, Object.class).getResultList();
         } catch (Exception e) {
             HCFUtil.showError(e);
@@ -519,7 +518,6 @@ public final class HCFConnection<T, E> {
     private void persist(List<T> entities, boolean isSaveOrUpdate) {
         try {
             transaction = session.beginTransaction();
-
             for (T entity : entities) {
                 if (isSaveOrUpdate) {
                     session.merge(entity);
@@ -527,7 +525,6 @@ public final class HCFConnection<T, E> {
                     session.remove(entity);
                 }
             }
-
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) {
@@ -543,18 +540,15 @@ public final class HCFConnection<T, E> {
     private void getRelationshipByHCF(T parentObject) {
         try {
             Class<?> parentClass = parentObject.getClass();
-            if (parentClass.getAnnotation(HCFRelationship.class) != null) {
-
+            if (parentClass.isAnnotationPresent(HCFRelationship.class)) {
                 String idFieldName = HCFUtil.getId(parentClass);
                 Field idField = parentClass.getDeclaredField(idFieldName);
-
                 idField.setAccessible(true);
                 Object id = idField.get(parentObject);
                 idField.setAccessible(false);
 
                 for (Field field : parentClass.getDeclaredFields()) {
                     if (field.isAnnotationPresent(OneToMany.class) || field.isAnnotationPresent(ManyToMany.class)) {
-
                         CriteriaBuilder builder = session.getCriteriaBuilder();
                         CriteriaQuery<Object> criteria = builder.createQuery();
                         Root<?> root = criteria.from(parentClass);
@@ -562,137 +556,157 @@ public final class HCFConnection<T, E> {
                         criteria.select(join).where(builder.equal(root.get(idFieldName), id));
                         TypedQuery<Object> query = session.createQuery(criteria);
                         List<Object> resultList = query.getResultList();
-
                         resultList.forEach(t -> getRelationshipByHCF((T) t));
-
                         field.setAccessible(true);
                         field.set(parentObject, resultList);
                         field.setAccessible(false);
                     }
                 }
-
             }
         } catch (Exception e) {
             HCFUtil.showError(e);
         }
     }
 
-    @SuppressWarnings("rawtypes")
     private void applyPredicate(CriteriaBuilder builder, CriteriaQuery<?> criteria, Root<T> root, List<HCFSearch> parameters) {
-        parameters.forEach(i -> {
-            Path field = root.get(i.getField());
-            Comparable value = (Comparable) i.getValue();
-            addPredicate(builder, criteria, field, value, i.getParameter(), i.getOperator());
-        });
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private void applyPredicate(CriteriaBuilder builder, CriteriaQuery criteria, Root<T> root, E... parameters) {
-        IntStream.iterate(0, i -> i + 4).limit(parameters.length / 4).forEach(i -> {
-            Path field = root.get(parameters[i].toString());
-            Comparable value = (Comparable) parameters[i + 1];
-            HCFParameter parameter = (HCFParameter) parameters[i + 2];
-            HCFOperator operator = (HCFOperator) parameters[i + 3];
-            addPredicate(builder, criteria, field, value, parameter, operator);
-        });
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private void addPredicate(CriteriaBuilder builder, CriteriaQuery<?> criteria, Path field, Comparable value, HCFParameter parameter, HCFOperator operator) {
-        switch (parameter) {
-            case TRUE:
-                predicates.add(builder.isTrue(field));
-                applyOperator(builder, operator);
-                break;
-            case LIKE:
-                predicates.add(builder.like(field, value.toString()));
-                applyOperator(builder, operator);
-                break;
-            case FALSE:
-                predicates.add(builder.isFalse(field));
-                applyOperator(builder, operator);
-                break;
-            case EQUAL:
-                predicates.add(builder.equal(field, value));
-                applyOperator(builder, operator);
-                break;
-            case EMPTY:
-                predicates.add(builder.length(builder.trim(field)).in(0));
-                applyOperator(builder, operator);
-                break;
-            case ISNULL:
-                predicates.add(builder.isNull(field));
-                applyOperator(builder, operator);
-                break;
-            case NOTLIKE:
-                predicates.add(builder.notLike(field, value.toString()));
-                applyOperator(builder, operator);
-                break;
-            case GROUPBY:
-                List<Expression<?>> groupList = new ArrayList<>(criteria.getGroupList());
-                groupList.add(field);
-                criteria.groupBy(groupList);
-                break;
-            case NOTEQUAL:
-                predicates.add(builder.notEqual(field, value));
-                applyOperator(builder, operator);
-                break;
-            case NOTEMPTY:
-                predicates.add(builder.length(builder.trim(field)).in(0).not());
-                applyOperator(builder, operator);
-                break;
-            case LESSTHAN:
-                predicates.add(builder.lessThan(field, value));
-                applyOperator(builder, operator);
-                break;
-            case ISNOTNULL:
-                predicates.add(builder.isNotNull(field));
-                applyOperator(builder, operator);
-                break;
-            case GREATERTHAN:
-                predicates.add(builder.greaterThan(field, value));
-                applyOperator(builder, operator);
-                break;
-            case LESSTHANOREQUALTO:
-                predicates.add(builder.lessThanOrEqualTo(field, value));
-                applyOperator(builder, operator);
-                break;
-            case GREATERTHANOREQUALTO:
-                predicates.add(builder.greaterThanOrEqualTo(field, value));
-                applyOperator(builder, operator);
-                break;
-            default:
-                throw new IllegalArgumentException("HCFParameter not valid");
+    	for (HCFSearch search : parameters) {
+            Path<?> field = root.get(search.getField());
+            Comparable<?> value = (Comparable<?>) search.getValue();
+			addPredicate(builder, criteria, field, value, search.getParameter(), search.getOperator());
         }
     }
 
-    private void applyOperator(CriteriaBuilder builder, HCFOperator operator) {
-        try {
-            switch (operator) {
-                case OR:
-                    predicates.add(builder.or(predicates.get(predicates.size() - 2), predicates.get(predicates.size() - 1)));
-                    predicates.remove(predicates.size() - 3);
-                    predicates.remove(predicates.size() - 2);
-                    break;
-                case AND:
-                    predicates.add(builder.and(predicates.get(predicates.size() - 2), predicates.get(predicates.size() - 1)));
-                    predicates.remove(predicates.size() - 3);
-                    predicates.remove(predicates.size() - 2);
-                    break;
-                default:
-                    break;
-            }
-        } catch (IndexOutOfBoundsException ignore) {
-            // Are probably iterating a collection, and it was not possible to use HCFOperator.NONE
+	@SafeVarargs
+	private void applyPredicate(CriteriaBuilder builder, CriteriaQuery<?> criteria, Root<T> root, E... parameters) {
+    	for (int i = 0; i < parameters.length; i += 4) {
+            String fieldName = parameters[i].toString();
+            Comparable<?> value = (Comparable<?>) parameters[i + 1];
+            HCFParameter hcfParameter = (HCFParameter) parameters[i + 2];
+            HCFOperator hcfOperator = (HCFOperator) parameters[i + 3];
+
+            Path<?> field = root.get(fieldName);
+            addPredicate(builder, criteria, field, value, hcfParameter, hcfOperator);
         }
     }
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private void addPredicate(CriteriaBuilder builder, CriteriaQuery<?> criteria, Path field, Comparable value, HCFParameter parameter, HCFOperator operator) {
+	    Predicate predicate = null;
+	    switch (parameter) {
+	        case TRUE:
+	            predicate = builder.isTrue(field);
+	            break;
+	        case LIKE:
+	            predicate = builder.like(field, value.toString());
+	            break;
+	        case FALSE:
+	            predicate = builder.isFalse(field);
+	            break;
+	        case EQUAL:
+	            predicate = builder.equal(field, value);
+	            break;
+	        case EMPTY:
+	            predicate = builder.length(builder.trim(field)).in(0);
+	            break;
+	        case ISODD:
+	            predicate = builder.equal(builder.mod(field, 2), 1);
+	            break;
+	        case ISEVEN:
+	            predicate = builder.equal(builder.mod(field, 2), 0);
+	            break;
+	        case ISNULL:
+	            predicate = builder.isNull(field);
+	            break;
+	        case NOTLIKE:
+	            predicate = builder.notLike(field, value.toString());
+	            break;
+	        case NOTEQUAL:
+	            predicate = builder.notEqual(field, value);
+	            break;
+	        case NOTEMPTY:
+	            predicate = builder.length(builder.trim(field)).in(0).not();
+	            break;
+	        case LESSTHAN:
+	            predicate = builder.lessThan(field, value);
+	            break;
+	        case ISNOTNULL:
+	            predicate = builder.isNotNull(field);
+	            break;
+	        case GREATERTHAN:
+	            predicate = builder.greaterThan(field, value);
+	            break;
+	        case LESSTHANOREQUALTO:
+	            predicate = builder.lessThanOrEqualTo(field, value);
+	            break;
+	        case GREATERTHANOREQUALTO:
+	            predicate = builder.greaterThanOrEqualTo(field, value);
+	            break;
+	        default:
+	            throw new IllegalArgumentException("HCFParameter not valid");
+	    }
+
+	    if (predicate != null) {
+	        predicates.add(predicate);
+	        applyOperator(builder, operator);
+	    }
+	}
+
+	/**
+	 * This method applies logical operators (AND, OR) to the list of predicates.
+	 * It processes the predicates list from bottom to top due to the order in which the criteria are evaluated.
+	 * 
+	 * Important Note:
+	 * The first HCFOperator should always be HCFOperator.NONE to prevent an IndexOutOfBoundsException.
+	 * This is because the method attempts to combine the last two predicates in the list when applying AND/OR.
+	 * 
+	 * Example of correct usage:
+	 * List<Data> datas = new HCFConnection<>(Data.class).search(null,
+	 *     "name", "User 25", HCFParameter.EQUAL, HCFOperator.NONE,
+	 *     "salary", 8000, HCFParameter.EQUAL, HCFOperator.AND,
+	 *     "name", "User 26", HCFParameter.EQUAL, HCFOperator.OR);
+	 * 
+	 * Example of incorrect usage:
+	 * List<Data> datas = new HCFConnection<>(Data.class).search(null,
+	 *     "name", "User 25", HCFParameter.EQUAL, HCFOperator.AND,
+	 *     "salary", 8000, HCFParameter.EQUAL, HCFOperator.AND,
+	 *     "name", "User 26", HCFParameter.EQUAL, HCFOperator.OR);
+	 * 
+	 * In the incorrect example, the first parameter being HCFOperator.AND causes an IndexOutOfBoundsException
+	 * because there are not enough predicates to combine at the start of the evaluation.
+	 */
+	private void applyOperator(CriteriaBuilder builder, HCFOperator hcfOperator) {
+	    try {
+	        switch (hcfOperator) {
+	            case OR:
+	                predicates.add(builder.or(predicates.get(predicates.size() - 2), predicates.get(predicates.size() - 1)));
+	                predicates.remove(predicates.size() - 3);
+	                predicates.remove(predicates.size() - 2);
+	                break;
+	            case AND:
+	                predicates.add(builder.and(predicates.get(predicates.size() - 2), predicates.get(predicates.size() - 1)));
+	                predicates.remove(predicates.size() - 3);
+	                predicates.remove(predicates.size() - 2);
+	                break;
+	            default:
+	                break;
+	        }
+	    } catch (IndexOutOfBoundsException e) {
+	    	/**
+	    	 * Caught an IndexOutOfBoundsException in applyOperator method.
+	    	 * The first parameter should have been HCFOperator.NONE to prevent this error,
+	    	 * ensuring proper handling of logical operators (AND, OR) during predicate application.
+	    	 * Despite the error, the search results were not affected due to subsequent valid criteria.
+	    	 */
+	    	HCFUtil.getLogger().warning("IndexOutOfBoundsException encountered. First parameter should have been HCFOperator.NONE.");
+	    }
+	}
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void order(List<HCFOrder> orders, CriteriaBuilder builder, CriteriaQuery criteria, Root<T> root) {
         if (orders == null) return;
         List<Order> persistenceOrders = orders.stream()
-                .filter(o -> o.getAsc() != null && o.getField() != null)
-                .map(o -> o.getAsc() ? builder.asc(root.get(o.getField())) : builder.desc(root.get(o.getField())))
+                .filter(order -> order.getAsc() != null && order.getField() != null)
+                .map(order -> order.getAsc() ? builder.asc(root.get(order.getField())) : builder.desc(root.get(order.getField())))
                 .collect(Collectors.toList());
         criteria.orderBy(persistenceOrders);
     }

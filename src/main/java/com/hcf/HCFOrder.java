@@ -8,6 +8,10 @@ public class HCFOrder {
     private String field;
     private Integer limit;
     private Integer offset;
+    
+    public HCFOrder() {
+
+    }
 
     public HCFOrder(Boolean asc, String field, Integer limit, Integer offset) {
         this.asc = asc;

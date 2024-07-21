@@ -18,42 +18,39 @@ import org.hibernate.cfg.Configuration;
 
 import com.hcf.utils.HCFUtil;
 
-public final class HCFFactory {
+public enum HCFFactory {
+    INSTANCE;
 
-    private static boolean internal = true;
-    private static SessionFactory sessionFactory = null;
-    private static final HCFFactory instance = new HCFFactory();
-    private static String propertiesPath = "hibernate.properties";
+    private boolean internal = true;
+    private SessionFactory sessionFactory = null;
+    private String propertiesPath = "hibernate.properties";
 
     static {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> HCFFactory.getInstance().shutdown()));
-
-        HCFUtil.getLogger().info("################################################");
-        HCFUtil.getLogger().info("Hibernate Connection facilitator - Version 1.0.1");
-        HCFUtil.getLogger().info("Eduardo William - karpinskipriester@gmail.com");
-        HCFUtil.getLogger().info("################################################");
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> HCFFactory.INSTANCE.shutdown()));
     }
 
-    private HCFFactory() {
-
-    }
+    private HCFFactory() {}
 
     public SessionFactory getFactory() {
         if (sessionFactory == null || sessionFactory.isClosed()) {
-            StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder();
-            if (internal) {
-                registryBuilder.loadProperties(propertiesPath);
-            } else {
-                registryBuilder.loadProperties(new File(propertiesPath));
-            }
-            StandardServiceRegistry registry = registryBuilder.build();
-            try {
-                MetadataSources metadataSources = new MetadataSources(registry);
-                HCFUtil.getAnnotatedClasses().forEach(metadataSources::addAnnotatedClass);
-                sessionFactory = metadataSources.buildMetadata().buildSessionFactory();
-            } catch (Exception e) {
-                HCFUtil.showError(e);
-                StandardServiceRegistryBuilder.destroy(registry);
+            synchronized (this) {
+                if (sessionFactory == null || sessionFactory.isClosed()) {
+                    StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder();
+                    if (internal) {
+                        registryBuilder.loadProperties(propertiesPath);
+                    } else {
+                        registryBuilder.loadProperties(new File(propertiesPath));
+                    }
+                    StandardServiceRegistry registry = registryBuilder.build();
+                    try {
+                        MetadataSources metadataSources = new MetadataSources(registry);
+                        HCFUtil.getAnnotatedClasses().forEach(metadataSources::addAnnotatedClass);
+                        sessionFactory = metadataSources.buildMetadata().buildSessionFactory();
+                    } catch (Exception e) {
+                        HCFUtil.showError(e);
+                        StandardServiceRegistryBuilder.destroy(registry);
+                    }
+                }
             }
         }
         return sessionFactory;
@@ -103,7 +100,7 @@ public final class HCFFactory {
         if (replaceCurrent) {
             shutdown();
             sessionFactory = newFactory;
-            instance.getAnnotatedClasses();
+            getAnnotatedClasses();
             return sessionFactory;
         }
 
@@ -126,10 +123,6 @@ public final class HCFFactory {
         } catch (Exception e) {
             HCFUtil.showError(e);
         }
-    }
-
-    public static HCFFactory getInstance() {
-        return instance;
     }
 
 }

@@ -6,14 +6,14 @@ import com.hcf.enums.HCFOperator;
 import com.hcf.enums.HCFParameter;
 
 public class HCFSearch {
-
+	
     private String field;
     private Object value;
     private HCFParameter parameter;
     private HCFOperator operator;
 
     public HCFSearch() {
-        // empty constructor created to give more options when instantiating the class
+
     }
 
     public HCFSearch(String field, Object value, HCFParameter parameter, HCFOperator operator) {
@@ -60,24 +60,24 @@ public class HCFSearch {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(field, operator, parameter, value);
-    }
+	public int hashCode() {
+		return Objects.hash(field, operator, parameter, value);
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        HCFSearch other = (HCFSearch) obj;
-        return Objects.equals(field, other.field) && operator == other.operator && parameter == other.parameter
-                && Objects.equals(value, other.value);
-    }
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		HCFSearch other = (HCFSearch) obj;
+		return Objects.equals(field, other.field) && operator == other.operator && parameter == other.parameter
+				&& Objects.equals(value, other.value);
+	}
 
-    @Override
+	@Override
     public String toString() {
         return "HCFSearch [field=" + field + ", value=" + value + ", parameter=" + parameter + ", operator=" + operator
                 + "]";
