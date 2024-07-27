@@ -2,19 +2,19 @@ package com.hcf.enums;
 
 public enum HCFParameter {
     TRUE,
-    LIKE,
     FALSE,
-    EQUAL,
-    EMPTY,
-    ISODD,
-    ISEVEN,
     ISNULL,
-    NOTLIKE,
+    IS_NOT_NULL,
+    EMPTY,
+    NOT_EMPTY,
+    IS_ODD,
+    IS_EVEN,
+    LIKE,
+    NOT_LIKE,
+    EQUAL,
     NOTEQUAL,
-    NOTEMPTY,
-    LESSTHAN,
-    ISNOTNULL,
-    GREATERTHAN,
-    LESSTHANOREQUALTO,
-    GREATERTHANOREQUALTO;
+    LESS_THAN,
+    GREATER_THAN,
+    LESS_THAN_OR_EQUAL_TO,
+    GREATER_THAN_OR_EQUAL_TO;
 }

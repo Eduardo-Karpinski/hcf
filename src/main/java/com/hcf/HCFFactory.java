@@ -26,10 +26,8 @@ public enum HCFFactory {
     private String propertiesPath = "hibernate.properties";
 
     static {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> HCFFactory.INSTANCE.shutdown()));
+        Runtime.getRuntime().addShutdownHook(new Thread(HCFFactory.INSTANCE::shutdown));
     }
-
-    private HCFFactory() {}
 
     public SessionFactory getFactory() {
         if (sessionFactory == null || sessionFactory.isClosed()) {

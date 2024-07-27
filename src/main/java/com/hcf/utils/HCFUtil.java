@@ -1,12 +1,18 @@
 package com.hcf.utils;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.reflections.Reflections;
+
+import com.hcf.HCFSearch;
+import com.hcf.enums.HCFOperator;
+import com.hcf.enums.HCFParameter;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -17,6 +23,20 @@ public final class HCFUtil {
 
     private HCFUtil() {
 
+    }
+    
+    public static List<HCFSearch> varargsToSearch(Object... parameters) {
+    	if (parameters.length % 4 != 0) {
+            throw new IllegalArgumentException("Parameters is not a multiple of 4.");
+    	}
+    	
+    	List<HCFSearch> hcfSearches = new ArrayList<>();
+    	
+    	for (int i = 0; i < parameters.length; i += 4) {
+            hcfSearches.add(new HCFSearch(parameters[i].toString(), parameters[i+1], (HCFParameter) parameters[i + 2], (HCFOperator) parameters[i + 3]));
+    	}
+    	
+    	return hcfSearches;
     }
 
     public static <T> String getId(Class<T> classe) {

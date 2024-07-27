@@ -38,7 +38,7 @@ import com.hcf.utils.HCFUtil;
 import jakarta.persistence.Id;
 
 class HCFConnectionTest {
-
+	
 	@BeforeEach
 	void createData() {
 	    List<Data> datas = new ArrayList<>();
@@ -132,7 +132,7 @@ class HCFConnectionTest {
 	    assertNotNull(savedData, "The new data entry should be found in the data list.");
 	    assertEquals("new data", savedData.getName(), "The name of the new data entry should be 'new data'.");
 	    assertEquals(0, savedData.getAge(), "The age of the new data entry should be 0.");
-	    assertTrue(savedData.getSalary().compareTo(BigDecimal.ZERO) == 0, "The salary of the new data entry should be 0.");
+        assertEquals(0, savedData.getSalary().compareTo(BigDecimal.ZERO), "The salary of the new data entry should be 0.");
 	    assertTrue(savedData.getActive(), "The new data entry should be active.");
 	}
 
@@ -165,7 +165,7 @@ class HCFConnectionTest {
 	    assertEquals(50, totalData, "There should be 50 data entries initially.");
 
 	    // Step 2: Delete data entries where the ID is even
-	    int deletedData = new HCFConnection<>(Data.class).massiveDelete("id", null, HCFParameter.ISEVEN, HCFOperator.NONE);
+	    int deletedData = new HCFConnection<>(Data.class).massiveDelete("id", null, HCFParameter.IS_EVEN, HCFOperator.NONE);
 	    assertEquals(25, deletedData, "25 data entries with even IDs should be deleted.");
 	    
 	    // Step 3: Verify the remaining data count after the first deletion
@@ -173,7 +173,7 @@ class HCFConnectionTest {
 	    assertEquals(25, remainingData, "There should be 25 data entries remaining after deleting even IDs.");
 
 	    // Step 4: Delete the remaining data entries where the ID is odd
-	    deletedData = new HCFConnection<>(Data.class).massiveDelete(Arrays.asList(new HCFSearch("id", null, HCFParameter.ISODD, HCFOperator.NONE)));
+	    deletedData = new HCFConnection<>(Data.class).massiveDelete(List.of(new HCFSearch("id", null, HCFParameter.IS_ODD, HCFOperator.NONE)));
 	    assertEquals(25, deletedData, "25 data entries with odd IDs should be deleted.");
 	    
 	    // Step 5: Verify the data count after the second deletion
@@ -185,13 +185,13 @@ class HCFConnectionTest {
 	void testMassiveUpdate() {
 	    // Step 1: Verify that not all data entries have age 100 initially
 	    List<Data> datas = new HCFConnection<>(Data.class).all();
-	    Boolean sameAge = datas.stream().allMatch(data -> data.getAge() == 100);
+	    boolean sameAge = datas.stream().allMatch(data -> data.getAge() == 100);
 	    assertFalse(sameAge, "Initially, not all data entries should have age 100.");
 	    
 	    // Step 2: Update all data entries' ages to 100 where id > 0
 	    Map<String, Object> newAges = new HashMap<>();
 	    newAges.put("age", 100);
-	    new HCFConnection<>(Data.class).massiveUpdate(newAges, "id", 0, HCFParameter.GREATERTHAN, HCFOperator.NONE);
+	    new HCFConnection<>(Data.class).massiveUpdate(newAges, "id", 0, HCFParameter.GREATER_THAN, HCFOperator.NONE);
 	    
 	    // Step 3: Verify that all data entries' ages are now 100
 	    datas = new HCFConnection<>(Data.class).all();
@@ -201,7 +201,7 @@ class HCFConnectionTest {
 	    // Step 4: Update all data entries' ages to 50 where id > 0 using HCFSearch
 	    newAges.clear();
 	    newAges.put("age", 50);
-	    new HCFConnection<>(Data.class).massiveUpdate(newAges, Arrays.asList(new HCFSearch("id", 0, HCFParameter.GREATERTHAN, HCFOperator.NONE)));
+	    new HCFConnection<>(Data.class).massiveUpdate(newAges, List.of(new HCFSearch("id", 0, HCFParameter.GREATER_THAN, HCFOperator.NONE)));
 	    
 	    // Step 5: Verify that all data entries' ages are now 50
 	    datas = new HCFConnection<>(Data.class).all();
@@ -340,7 +340,7 @@ class HCFConnectionTest {
 		BigDecimal allSalaries = allData.stream().map(Data::getSalary).reduce(BigDecimal.ZERO, BigDecimal::add);
 
 		// Test sum for all salaries
-		List<Object> results = new HCFConnection<>(Data.class).sum(Arrays.asList("salary"));
+		List<Object> results = new HCFConnection<>(Data.class).sum(List.of("salary"));
 		assertNotNull(results, "Results should not be null.");
 		assertEquals(1, results.size(), "Exactly one result should be returned.");
 		assertEquals(allSalaries, results.get(0), "Sum of all salaries should match.");
@@ -350,7 +350,7 @@ class HCFConnectionTest {
 				.reduce(BigDecimal.ZERO, BigDecimal::add);
 
 		// Test sum for salaries with even IDs
-		results = new HCFConnection<>(Data.class).sum(Arrays.asList("salary"), "id", null, HCFParameter.ISEVEN,
+		results = new HCFConnection<>(Data.class).sum(List.of("salary"), "id", null, HCFParameter.IS_EVEN,
 				HCFOperator.NONE);
 		assertNotNull(results, "Results should not be null.");
 		assertEquals(1, results.size(), "Exactly one result should be returned.");
@@ -436,14 +436,13 @@ class HCFConnectionTest {
 	    assertEquals(1, elementsBySQL.size(), "The elements list should contain one entry.");
 
 	    // Step 4: Verify the retrieved data matches the expected values
-	    Object[] columns = (Object[]) elementsBySQL.get(0);
+	    Object[] columns = (Object[]) elementsBySQL.getFirst();
 	    assertEquals(data.getName(), columns[0], "The name should match.");
 	    assertEquals(data.getAge(), columns[1], "The age should match.");
 	    assertEquals(data.getSalary(), columns[2], "The salary should match.");
 	    assertEquals(data.getRegistrationDate(), LocalDateTime.parse(columns[3].toString().replace(" ", "T")), "The registration date should match.");
 	    assertEquals(data.getActive(), columns[4], "The active status should match.");
 	}
-
 
 	@Test
 	void testCount() {
@@ -466,13 +465,13 @@ class HCFConnectionTest {
 	    
 	    // Step 2: Test distinct ages greater than or equal to 40
 	    distinct = new HCFConnection<>(Data.class).getDistinctField("age",
-	            "age", 40, HCFParameter.GREATERTHANOREQUALTO, HCFOperator.NONE);
+	            "age", 40, HCFParameter.GREATER_THAN_OR_EQUAL_TO, HCFOperator.NONE);
 	    
 	    assertEquals(31, distinct.size(), "Expected 31 distinct ages greater than or equal to 40.");
 	    
 	    // Step 3: Test distinct ages greater than or equal to 40 using HCFSearch
 	    distinct = new HCFConnection<>(Data.class).getDistinctField("age",
-	            Arrays.asList(new HCFSearch("age", 40, HCFParameter.GREATERTHANOREQUALTO, HCFOperator.NONE)));
+	            Arrays.asList(new HCFSearch("age", 40, HCFParameter.GREATER_THAN_OR_EQUAL_TO, HCFOperator.NONE)));
 	    
 	    assertEquals(31, distinct.size(), "Expected 31 distinct ages greater than or equal to 40.");
 	}
@@ -489,7 +488,7 @@ class HCFConnectionTest {
 	    assertEquals(21, data.getAge(), "The age of the retrieved data should be 21.");
 	    
 	    // Step 4: Perform the search with one result with HCFSearch
-	    data = new HCFConnection<>(Data.class).searchWithOneResult(null, Arrays.asList(new HCFSearch("age", 22, HCFParameter.EQUAL, HCFOperator.NONE)));
+	    data = new HCFConnection<>(Data.class).searchWithOneResult(null, List.of(new HCFSearch("age", 22, HCFParameter.EQUAL, HCFOperator.NONE)));
 	    
 	    // Step 5: Assert that the result is not null
 	    assertNotNull(data, "Expected to find a data entry with age 22.");
@@ -507,10 +506,10 @@ class HCFConnectionTest {
 	    LocalDateTime to = LocalDateTime.of(2025, 3, 5, 15, 30);
 		
 		List<Data> data = new HCFConnection<>(Data.class).search(null,
-				"salary", lowestValue, HCFParameter.GREATERTHANOREQUALTO, HCFOperator.NONE,
-				"salary", highestValue, HCFParameter.LESSTHANOREQUALTO, HCFOperator.AND,
-				"registrationDate", from, HCFParameter.GREATERTHANOREQUALTO, HCFOperator.AND,
-				"registrationDate", to, HCFParameter.LESSTHANOREQUALTO, HCFOperator.AND,
+				"salary", lowestValue, HCFParameter.GREATER_THAN_OR_EQUAL_TO, HCFOperator.NONE,
+				"salary", highestValue, HCFParameter.LESS_THAN_OR_EQUAL_TO, HCFOperator.AND,
+				"registrationDate", from, HCFParameter.GREATER_THAN_OR_EQUAL_TO, HCFOperator.AND,
+				"registrationDate", to, HCFParameter.LESS_THAN_OR_EQUAL_TO, HCFOperator.AND,
 				"active", null, HCFParameter.TRUE, HCFOperator.AND);
 
 		assertEquals(data.size(), 2); 
@@ -518,15 +517,15 @@ class HCFConnectionTest {
 		data.forEach(d -> {
 			assertTrue(d.getSalary().compareTo(lowestValue) >= 0 && d.getSalary().compareTo(highestValue) <= 0,
 	                "Data entry salary should be between " + lowestValue + " and " + highestValue);
-	        assertTrue(d.getRegistrationDate().compareTo(from) >= 0 && d.getRegistrationDate().compareTo(to) <= 0,
+	        assertTrue(!d.getRegistrationDate().isBefore(from) && !d.getRegistrationDate().isAfter(to),
 	                "Data entry registration date should be between " + from + " and " + to);
 	        assertTrue(d.getActive(), "Data entry should be active.");
 		});
 		
-		HCFSearch search1 = new HCFSearch().setField("salary").setValue(lowestValue).setParameter(HCFParameter.GREATERTHANOREQUALTO).setOperator(HCFOperator.NONE);
-		HCFSearch search2 = new HCFSearch().setField("salary").setValue(highestValue).setParameter(HCFParameter.LESSTHANOREQUALTO).setOperator(HCFOperator.AND);
-		HCFSearch search3 = new HCFSearch().setField("registrationDate").setValue(from).setParameter(HCFParameter.GREATERTHANOREQUALTO).setOperator(HCFOperator.AND);
-		HCFSearch search4 = new HCFSearch().setField("registrationDate").setValue(to).setParameter(HCFParameter.LESSTHANOREQUALTO).setOperator(HCFOperator.AND);
+		HCFSearch search1 = new HCFSearch().setField("salary").setValue(lowestValue).setParameter(HCFParameter.GREATER_THAN_OR_EQUAL_TO).setOperator(HCFOperator.NONE);
+		HCFSearch search2 = new HCFSearch().setField("salary").setValue(highestValue).setParameter(HCFParameter.LESS_THAN_OR_EQUAL_TO).setOperator(HCFOperator.AND);
+		HCFSearch search3 = new HCFSearch().setField("registrationDate").setValue(from).setParameter(HCFParameter.GREATER_THAN_OR_EQUAL_TO).setOperator(HCFOperator.AND);
+		HCFSearch search4 = new HCFSearch().setField("registrationDate").setValue(to).setParameter(HCFParameter.LESS_THAN_OR_EQUAL_TO).setOperator(HCFOperator.AND);
 		HCFSearch search5 = new HCFSearch().setField("active").setParameter(HCFParameter.TRUE).setOperator(HCFOperator.AND);
 		
 		data = new HCFConnection<>(Data.class).search(null, Arrays.asList(search1, search2, search3, search4, search5));
@@ -536,7 +535,7 @@ class HCFConnectionTest {
 		data.forEach(d -> {
 			assertTrue(d.getSalary().compareTo(lowestValue) >= 0 && d.getSalary().compareTo(highestValue) <= 0,
 	                "Data entry salary should be between " + lowestValue + " and " + highestValue);
-	        assertTrue(d.getRegistrationDate().compareTo(from) >= 0 && d.getRegistrationDate().compareTo(to) <= 0,
+	        assertTrue(!d.getRegistrationDate().isBefore(from) && !d.getRegistrationDate().isAfter(to),
 	                "Data entry registration date should be between " + from + " and " + to);
 	        assertTrue(d.getActive(), "Data entry should be active.");
 		});
@@ -554,7 +553,7 @@ class HCFConnectionTest {
 	    assertEquals(1, datas.size(), "There should be exactly one result.");
 
 	    // Get the single result
-	    Data data = datas.get(0);
+	    Data data = datas.getFirst();
 
 	    // Assert that the result is not null
 	    assertNotNull(data, "The result should not be null.");
@@ -623,15 +622,15 @@ class HCFConnectionTest {
 	    List<Data> datas = new HCFConnection<>(Data.class).search(null,
 	            "name", null, HCFParameter.EMPTY, HCFOperator.NONE,
 	            "age", null, HCFParameter.ISNULL, HCFOperator.AND,
-	            "name", null, HCFParameter.NOTEMPTY, HCFOperator.OR,
+	            "name", null, HCFParameter.NOT_EMPTY, HCFOperator.OR,
 	            "name", "User 2%", HCFParameter.LIKE, HCFOperator.AND,
-	            "name", "User 1%", HCFParameter.NOTLIKE, HCFOperator.AND,
-	            "name", "User 3%", HCFParameter.NOTLIKE, HCFOperator.AND,
-	            "name", "User 4%", HCFParameter.NOTLIKE, HCFOperator.AND,
-	            "name", "User 5%", HCFParameter.NOTLIKE, HCFOperator.AND,
+	            "name", "User 1%", HCFParameter.NOT_LIKE, HCFOperator.AND,
+	            "name", "User 3%", HCFParameter.NOT_LIKE, HCFOperator.AND,
+	            "name", "User 4%", HCFParameter.NOT_LIKE, HCFOperator.AND,
+	            "name", "User 5%", HCFParameter.NOT_LIKE, HCFOperator.AND,
 	            "name", "User 2", HCFParameter.NOTEQUAL, HCFOperator.AND,
-	            "active", null, HCFParameter.ISNOTNULL, HCFOperator.AND,
-	            "registrationDate", LocalDateTime.of(2025, 8, 30, 14, 15), HCFParameter.LESSTHAN, HCFOperator.AND,
+	            "active", null, HCFParameter.IS_NOT_NULL, HCFOperator.AND,
+	            "registrationDate", LocalDateTime.of(2025, 8, 30, 14, 15), HCFParameter.LESS_THAN, HCFOperator.AND,
 	            "active", null, HCFParameter.FALSE, HCFOperator.AND);
 
 	    assertEquals(datasBySQL.size(), datas.size(), "The size of the lists should be the same.");

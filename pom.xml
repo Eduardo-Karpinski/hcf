@@ -44,19 +44,6 @@
 	</dependencies>
 	<build>
 		<plugins>
-			
-			<plugin>
-	            <groupId>org.apache.maven.plugins</groupId>
-        		<artifactId>maven-surefire-plugin</artifactId>
-	            <version>3.3.1</version>
-	            <configuration>
-	                <excludes>
-	                    <exclude>com/hcf/HCFOrder.java</exclude>
-	                    <exclude>com/hcf/HCFSearch.java</exclude>
-	                </excludes>
-	            </configuration>
-	        </plugin>
-			
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
