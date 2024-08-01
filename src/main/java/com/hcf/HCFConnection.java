@@ -126,7 +126,24 @@ public final class HCFConnection<T> {
         }
     }
 
-    // TODO adicionar ordenador
+    public List<T> all(List<HCFOrder> orders) {
+        try {
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaQuery<T> criteria = builder.createQuery(persistentClass);
+            Root<T> root = criteria.from(persistentClass);
+            order(orders, builder, criteria, root);
+            TypedQuery<T> query = limitResults(orders, criteria);
+            List<T> resultList = query.getResultList();
+            resultList.forEach(this::getRelationshipByHCF);
+            return resultList;
+        } catch (Exception e) {
+            HCFUtil.showError(e);
+            return null;
+        } finally {
+            close();
+        }
+    }
+    
     public List<T> all() {
         try {
             CriteriaBuilder builder = session.getCriteriaBuilder();
@@ -582,7 +599,7 @@ public final class HCFConnection<T> {
             // The first parameter should have been HCFOperator.NONE to prevent this error,
             // ensuring proper handling of logical operators (AND, OR) during predicate application.
             // Despite the error, the search results were not affected due to subsequent valid criteria.
-            HCFUtil.getLogger().warning("IndexOutOfBoundsException encountered. First parameter should have been HCFOperator.NONE.");
+            HCFUtil.getLogger().warning("[HCF-WARNING] IndexOutOfBoundsException encountered. First parameter should have been HCFOperator.NONE.");
         }
     }
 

@@ -216,6 +216,13 @@ class HCFConnectionTest {
 		List<Data> datas = new HCFConnection<>(Data.class).all();
 		assertEquals(50, datas.size(), "There should be 50 data entries initially.");
 	}
+	
+	@Test
+	void testAllWithOrder() {
+		HCFOrder hcfOrder = new HCFOrder(false, "id", 10, 10);
+		List<Data> datas = new HCFConnection<>(Data.class).all(List.of(hcfOrder));
+		assertEquals(10, datas.size(), "There should be 10 data entries.");
+	}
 
 	@Test
 	void testHCFRelationship() {
