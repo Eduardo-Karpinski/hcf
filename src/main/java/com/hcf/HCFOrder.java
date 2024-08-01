@@ -8,7 +8,7 @@ public class HCFOrder {
     private String field;
     private Integer limit;
     private Integer offset;
-    
+
     public HCFOrder() {
 
     }

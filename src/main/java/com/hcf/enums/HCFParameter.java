@@ -3,7 +3,7 @@ package com.hcf.enums;
 public enum HCFParameter {
     TRUE,
     FALSE,
-    ISNULL,
+    IS_NULL,
     IS_NOT_NULL,
     EMPTY,
     NOT_EMPTY,
@@ -12,7 +12,7 @@ public enum HCFParameter {
     LIKE,
     NOT_LIKE,
     EQUAL,
-    NOTEQUAL,
+    NOT_EQUAL,
     LESS_THAN,
     GREATER_THAN,
     LESS_THAN_OR_EQUAL_TO,

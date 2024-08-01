@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import com.hcf.HCFConnection;
 import com.hcf.HCFFactory;
+import com.hcf.HCFJoinSearch;
 import com.hcf.HCFOrder;
 import com.hcf.HCFSearch;
 import com.hcf.enums.HCFOperator;
@@ -33,6 +34,7 @@ import com.hcf.test.entities.Data;
 import com.hcf.test.entities.DataChild;
 import com.hcf.test.entities.DataWithChildren;
 import com.hcf.test.entities.DataWithOutId;
+import com.hcf.test.entities.Permission;
 import com.hcf.utils.HCFUtil;
 
 import jakarta.persistence.Id;
@@ -621,14 +623,14 @@ class HCFConnectionTest {
 
 	    List<Data> datas = new HCFConnection<>(Data.class).search(null,
 	            "name", null, HCFParameter.EMPTY, HCFOperator.NONE,
-	            "age", null, HCFParameter.ISNULL, HCFOperator.AND,
+	            "age", null, HCFParameter.IS_NULL, HCFOperator.AND,
 	            "name", null, HCFParameter.NOT_EMPTY, HCFOperator.OR,
 	            "name", "User 2%", HCFParameter.LIKE, HCFOperator.AND,
 	            "name", "User 1%", HCFParameter.NOT_LIKE, HCFOperator.AND,
 	            "name", "User 3%", HCFParameter.NOT_LIKE, HCFOperator.AND,
 	            "name", "User 4%", HCFParameter.NOT_LIKE, HCFOperator.AND,
 	            "name", "User 5%", HCFParameter.NOT_LIKE, HCFOperator.AND,
-	            "name", "User 2", HCFParameter.NOTEQUAL, HCFOperator.AND,
+	            "name", "User 2", HCFParameter.NOT_EQUAL, HCFOperator.AND,
 	            "active", null, HCFParameter.IS_NOT_NULL, HCFOperator.AND,
 	            "registrationDate", LocalDateTime.of(2025, 8, 30, 14, 15), HCFParameter.LESS_THAN, HCFOperator.AND,
 	            "active", null, HCFParameter.FALSE, HCFOperator.AND);
@@ -693,6 +695,64 @@ class HCFConnectionTest {
 		RuntimeException thrown = assertThrows(RuntimeException.class, () -> HCFUtil.getId(DataWithOutId.class),
 				"Expected an error because the class does not have " + Id.class);
 		assertTrue(thrown.getMessage().contains("not found in fields of"));
+	}
+	
+	@Test
+	void testJoin() {
+
+		List<Data> datas = new HCFConnection<>(Data.class).all();
+		Data data1 = datas.get(0);
+		Data data2 = datas.get(1);
+		Data data3 = datas.get(2);
+
+		Permission permission1 = new Permission(data1.getId(), "admin");
+		Permission permission2 = new Permission(data1.getId(), "reviser");
+		Permission permission3 = new Permission(data1.getId(), "user");
+		Permission permission4 = new Permission(data2.getId(), "reviser");
+		Permission permission5 = new Permission(data2.getId(), "user");
+		Permission permission6 = new Permission(data3.getId(), "user");
+
+		new HCFConnection<>(Permission.class).save(Arrays.asList(permission1, permission2, permission3, permission4, permission5, permission6));
+
+		HCFOrder hcfOrder = new HCFOrder().setAsc(false).setField("id");
+
+		// Configure the search parameters
+		HCFSearch search = new HCFSearch()
+				.setField("id")
+				.setValue(0)
+				.setParameter(HCFParameter.NOT_EQUAL)
+				.setOperator(HCFOperator.NONE);
+
+		// Configure the join parameters
+		HCFJoinSearch joins = new HCFJoinSearch()
+				.setPrimaryField("id")
+				.setForeignField("idUser")
+				.setValue(1)
+				.setJoinClass(Permission.class);
+
+		// Execute the search with join
+		List<Object[]> result = new HCFConnection<>(Data.class).searchWithJoin(List.of(hcfOrder), List.of(search), List.of(joins));
+
+		// Verify the results
+		assertNotNull(result, "The result of the join search should not be null.");
+		assertFalse(result.isEmpty(), "The result of the join search should not be empty.");
+		assertEquals(6, result.size(), "The join search result should have 6 results.");
+
+		for (Object[] columns : result) {
+			boolean hasData = false;
+			boolean hasPermission = false;
+
+			for (Object column : columns) {
+				if (column instanceof Data) {
+					hasData = true;
+				} else if (column instanceof Permission) {
+					hasPermission = true;
+				}
+			}
+
+			assertTrue(hasData, "The result should contain a Data object.");
+			assertTrue(hasPermission, "The result should contain a Permission object.");
+		}
 	}
 	
 }

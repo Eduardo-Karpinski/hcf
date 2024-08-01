@@ -35,6 +35,7 @@ import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Selection;
 import jakarta.persistence.criteria.Subquery;
 
 public final class HCFConnection<T> {
@@ -81,7 +82,7 @@ public final class HCFConnection<T> {
     }
 
     public int massiveDelete(Object... parameters) {
-    	return massiveDelete(HCFUtil.varargsToSearch(parameters));
+        return massiveDelete(HCFUtil.varargsToSearch(parameters));
     }
 
     public int massiveDelete(List<HCFSearch> hcfSearches) {
@@ -125,6 +126,7 @@ public final class HCFConnection<T> {
         }
     }
 
+    // TODO adicionar ordenador
     public List<T> all() {
         try {
             CriteriaBuilder builder = session.getCriteriaBuilder();
@@ -220,13 +222,13 @@ public final class HCFConnection<T> {
     }
 
     public List<Object> sum(List<String> fields, Object... parameters) {
-    	return sum(fields, HCFUtil.varargsToSearch(parameters));
+        return sum(fields, HCFUtil.varargsToSearch(parameters));
     }
-    
+
     public List<Object> sum(List<String> fields, List<HCFSearch> parameters) {
         try {
-        	List<Expression<? extends Number>> expressions = new ArrayList<>();
-        	
+            List<Expression<? extends Number>> expressions = new ArrayList<>();
+
             CriteriaBuilder builder = session.getCriteriaBuilder();
             CriteriaQuery<Tuple> criteria = builder.createTupleQuery();
             Root<T> root = criteria.from(persistentClass);
@@ -371,7 +373,7 @@ public final class HCFConnection<T> {
     }
 
     public T searchWithOneResult(List<HCFOrder> orders, Object... parameters) {
-    	return searchWithOneResult(orders, HCFUtil.varargsToSearch(parameters));
+        return searchWithOneResult(orders, HCFUtil.varargsToSearch(parameters));
     }
 
     public T searchWithOneResult(List<HCFOrder> orders, List<HCFSearch> parameters) {
@@ -397,7 +399,7 @@ public final class HCFConnection<T> {
     }
 
     public List<T> search(List<HCFOrder> orders, Object... parameters) {
-    	return search(orders, HCFUtil.varargsToSearch(parameters));
+        return search(orders, HCFUtil.varargsToSearch(parameters));
     }
 
     public List<T> search(List<HCFOrder> orders, List<HCFSearch> parameters) {
@@ -420,6 +422,26 @@ public final class HCFConnection<T> {
         } finally {
             close();
         }
+    }
+
+    public List<Object[]> searchWithJoin(List<HCFOrder> orders, List<HCFSearch> parameters, List<HCFJoinSearch> hcfJoinSearchs) {
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<Object[]> criteria = builder.createQuery(Object[].class);
+        Root<T> root = criteria.from(persistentClass);
+        order(orders, builder, criteria, root);
+        applyPredicate(builder, root, parameters);
+
+        List<Selection<?>> selections = new ArrayList<>();
+        selections.add(root);
+        for (HCFJoinSearch hcfJoinSearch : hcfJoinSearchs) {
+            Root<?> joinRoot = criteria.from(hcfJoinSearch.getJoinClass());
+            predicates.add(builder.equal(root.get(hcfJoinSearch.getPrimaryField()), joinRoot.get(hcfJoinSearch.getForeignField())));
+            selections.add(joinRoot);
+        }
+
+        criteria.multiselect(selections).where(predicates.toArray(Predicate[]::new));
+
+        return session.createQuery(criteria).getResultList();
     }
 
     private void persist(List<T> entities, boolean isSaveOrUpdate) {
@@ -476,97 +498,99 @@ public final class HCFConnection<T> {
     }
 
     private void applyPredicate(CriteriaBuilder builder, Root<T> root, List<HCFSearch> parameters) {
-    	for (HCFSearch search : parameters) {
+        for (HCFSearch search : parameters) {
             Path<?> field = root.get(search.getField());
             Comparable<?> value = (Comparable<?>) search.getValue();
-			addPredicate(builder, field, value, search.getParameter(), search.getOperator());
+            addPredicate(builder, field, value, search.getParameter(), search.getOperator());
         }
     }
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private void addPredicate(CriteriaBuilder builder, Path field, Comparable value, HCFParameter parameter, HCFOperator operator) {
-	    Predicate predicate = switch (parameter) {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void addPredicate(CriteriaBuilder builder, Path field, Comparable value, HCFParameter parameter, HCFOperator operator) {
+        Predicate predicate = switch (parameter) {
             case TRUE -> builder.isTrue(field);
-            case LIKE -> builder.like(field, value.toString());
             case FALSE -> builder.isFalse(field);
-            case EQUAL -> builder.equal(field, value);
+            case IS_NULL -> builder.isNull(field);
+            case IS_NOT_NULL -> builder.isNotNull(field);
             case EMPTY -> builder.length(builder.trim(field)).in(0);
+            case NOT_EMPTY -> builder.length(builder.trim(field)).in(0).not();
             case IS_ODD -> builder.equal(builder.mod(field, 2), 1);
             case IS_EVEN -> builder.equal(builder.mod(field, 2), 0);
-            case ISNULL -> builder.isNull(field);
+            case LIKE -> builder.like(field, value.toString());
             case NOT_LIKE -> builder.notLike(field, value.toString());
-            case NOTEQUAL -> builder.notEqual(field, value);
-            case NOT_EMPTY -> builder.length(builder.trim(field)).in(0).not();
+            case EQUAL -> builder.equal(field, value);
+            case NOT_EQUAL -> builder.notEqual(field, value);
             case LESS_THAN -> builder.lessThan(field, value);
-            case IS_NOT_NULL -> builder.isNotNull(field);
             case GREATER_THAN -> builder.greaterThan(field, value);
             case LESS_THAN_OR_EQUAL_TO -> builder.lessThanOrEqualTo(field, value);
             case GREATER_THAN_OR_EQUAL_TO -> builder.greaterThanOrEqualTo(field, value);
         };
-        
-        if (predicate != null) {
-	        predicates.add(predicate);
-	        applyOperator(builder, operator);
-	    }
-	}
 
-	/**
+        if (predicate != null) {
+            predicates.add(predicate);
+            applyOperator(builder, operator);
+        }
+    }
+
+    /**
      * <p>
-	 * This method applies logical operators (AND, OR) to the list of predicates.
-	 * It processes the predicates list from bottom to top due to the order in which the criteria are evaluated.
+     * This method applies logical operators (AND, OR) to the list of predicates.
+     * It processes the predicates list from bottom to top due to the order in which the criteria are evaluated.
      * </p>
      * <p>
-	 * Important Note:
-	 * The first HCFOperator should always be HCFOperator.NONE to prevent an IndexOutOfBoundsException.
-	 * This is because the method attempts to combine the last two predicates in the list when applying AND/OR.
+     * Important Note:
+     * The first HCFOperator should always be HCFOperator.NONE to prevent an IndexOutOfBoundsException.
+     * This is because the method attempts to combine the last two predicates in the list when applying AND/OR.
      * </p>
-	 * <p>
-	 * Example of correct usage:
-	 * List<Data> datas = new HCFConnection<>(Data.class).search(null,
-	 *     "name", "User 25", HCFParameter.EQUAL, HCFOperator.NONE,
-	 *     "salary", 8000, HCFParameter.EQUAL, HCFOperator.AND,
-	 *     "name", "User 26", HCFParameter.EQUAL, HCFOperator.OR);
+     * <p>
+     * Example of correct usage:
+     * List<Data> datas = new HCFConnection<>(Data.class).search(null,
+     * "name", "User 25", HCFParameter.EQUAL, HCFOperator.NONE,
+     * "salary", 8000, HCFParameter.EQUAL, HCFOperator.AND,
+     * "name", "User 26", HCFParameter.EQUAL, HCFOperator.OR);
      * </p>
-	 * <p>
-	 * Example of incorrect usage:
-	 * List<Data> datas = new HCFConnection<>(Data.class).search(null,
-	 *     "name", "User 25", HCFParameter.EQUAL, HCFOperator.AND,
-	 *     "salary", 8000, HCFParameter.EQUAL, HCFOperator.AND,
-	 *     "name", "User 26", HCFParameter.EQUAL, HCFOperator.OR);
+     * <p>
+     * Example of incorrect usage:
+     * List<Data> datas = new HCFConnection<>(Data.class).search(null,
+     * "name", "User 25", HCFParameter.EQUAL, HCFOperator.AND,
+     * "salary", 8000, HCFParameter.EQUAL, HCFOperator.AND,
+     * "name", "User 26", HCFParameter.EQUAL, HCFOperator.OR);
      * </p>
-	 * <p>
-	 * In the incorrect example, the first parameter being HCFOperator.AND causes an IndexOutOfBoundsException
-	 * because there are not enough predicates to combine at the start of the evaluation.
+     * <p>
+     * In the incorrect example, the first parameter being HCFOperator.AND causes an IndexOutOfBoundsException
+     * because there are not enough predicates to combine at the start of the evaluation.
      * <p/>
-	 */
-	private void applyOperator(CriteriaBuilder builder, HCFOperator hcfOperator) {
-	    try {
-	        switch (hcfOperator) {
-	            case OR:
-	                predicates.add(builder.or(predicates.get(predicates.size() - 2), predicates.getLast()));
-	                predicates.remove(predicates.size() - 3);
-	                predicates.remove(predicates.size() - 2);
-	                break;
-	            case AND:
-	                predicates.add(builder.and(predicates.get(predicates.size() - 2), predicates.getLast()));
-	                predicates.remove(predicates.size() - 3);
-	                predicates.remove(predicates.size() - 2);
-	                break;
-	            default:
-	                break;
-	        }
-	    } catch (IndexOutOfBoundsException e) {
-	    	// Caught an IndexOutOfBoundsException in applyOperator method.
-	    	// The first parameter should have been HCFOperator.NONE to prevent this error,
-	    	// ensuring proper handling of logical operators (AND, OR) during predicate application.
-	    	// Despite the error, the search results were not affected due to subsequent valid criteria.
-	    	HCFUtil.getLogger().warning("IndexOutOfBoundsException encountered. First parameter should have been HCFOperator.NONE.");
-	    }
-	}
+     */
+    private void applyOperator(CriteriaBuilder builder, HCFOperator hcfOperator) {
+        try {
+            switch (hcfOperator) {
+                case OR:
+                    predicates.add(builder.or(predicates.get(predicates.size() - 2), predicates.getLast()));
+                    predicates.remove(predicates.size() - 3);
+                    predicates.remove(predicates.size() - 2);
+                    break;
+                case AND:
+                    predicates.add(builder.and(predicates.get(predicates.size() - 2), predicates.getLast()));
+                    predicates.remove(predicates.size() - 3);
+                    predicates.remove(predicates.size() - 2);
+                    break;
+                default:
+                    break;
+            }
+        } catch (IndexOutOfBoundsException e) {
+            // Caught an IndexOutOfBoundsException in applyOperator method.
+            // The first parameter should have been HCFOperator.NONE to prevent this error,
+            // ensuring proper handling of logical operators (AND, OR) during predicate application.
+            // Despite the error, the search results were not affected due to subsequent valid criteria.
+            HCFUtil.getLogger().warning("IndexOutOfBoundsException encountered. First parameter should have been HCFOperator.NONE.");
+        }
+    }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void order(List<HCFOrder> orders, CriteriaBuilder builder, CriteriaQuery criteria, Root<T> root) {
-        if (orders == null) return;
+        if (orders == null) {
+            return;
+        }
         List<Order> persistenceOrders = orders.stream()
                 .filter(order -> order.getAsc() != null && order.getField() != null)
                 .map(order -> order.getAsc() ? builder.asc(root.get(order.getField())) : builder.desc(root.get(order.getField())))
@@ -575,13 +599,13 @@ public final class HCFConnection<T> {
     }
 
     private TypedQuery<T> limitResults(List<HCFOrder> orders, CriteriaQuery<T> criteria) {
-        try {
-            Integer limit = orders.stream().map(HCFOrder::getLimit).filter(Objects::nonNull).findFirst().orElse(null);
-            Integer offset = orders.stream().map(HCFOrder::getOffset).filter(Objects::nonNull).findFirst().orElse(0);
-            return session.createQuery(criteria).setFirstResult(offset).setMaxResults(limit);
-        } catch (Exception e) {
+        if (orders == null || orders.isEmpty()) {
             return session.createQuery(criteria);
         }
+
+        Integer limit = orders.stream().map(HCFOrder::getLimit).filter(Objects::nonNull).findFirst().orElse(null);
+        Integer offset = orders.stream().map(HCFOrder::getOffset).filter(Objects::nonNull).findFirst().orElse(0);
+        return session.createQuery(criteria).setFirstResult(offset).setMaxResults(limit);
     }
 
     private void close() {
