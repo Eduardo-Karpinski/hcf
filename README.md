@@ -8,7 +8,7 @@ HCF is a generic DAO for database persistence.
     <dependency>
         <groupId>io.github.eduardo-karpinski</groupId>
         <artifactId>hcf-core</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.2</version>
     </dependency>
     ...
 </dependencies>
@@ -31,13 +31,8 @@ hibernate.c3p0.max_size=10
 hibernate.c3p0.timeout=3000
 hibernate.c3p0.max_statements=30
 # others
-hibernate.show_sql=false
-hibernate.format_sql=false
 hibernate.hbm2ddl.auto=update
-hibernate.enable_lazy_load_no_trans=false
-hibernate.dialect=org.hibernate.dialect.MySQLDialect
 hibernate.session.events.log.LOG_QUERIES_SLOWER_THAN_MS=500
-hibernate.jdbc.batch_size=20
 ```
 
 ## HCF Wiki

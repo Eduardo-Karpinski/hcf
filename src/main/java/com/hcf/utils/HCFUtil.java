@@ -39,8 +39,8 @@ public final class HCFUtil {
     	return hcfSearches;
     }
 
-    public static <T> String getId(Class<T> classe) {
-        Field[] fields = classe.getDeclaredFields();
+    public static <T> String getId(Class<T> clazz) {
+        Field[] fields = clazz.getDeclaredFields();
 
         for (Field field : fields) {
             if (field.isAnnotationPresent(Id.class)) {
@@ -48,11 +48,11 @@ public final class HCFUtil {
             }
         }
 
-        if (classe.getSuperclass().equals(Object.class)) {
-            throw new RuntimeException(Id.class + " not found in fields of " + classe);
+        if (clazz.getSuperclass().equals(Object.class)) {
+            throw new RuntimeException(Id.class + " not found in fields of " + clazz);
         }
 
-        return getId(classe.getSuperclass());
+        return getId(clazz.getSuperclass());
     }
 
     public static Set<Class<?>> getAnnotatedClasses() {

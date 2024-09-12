@@ -106,7 +106,7 @@
 	</build>
 	<properties>
 		<java.version>21</java.version>
-		<hibernate.version>6.5.2.Final</hibernate.version>
+		<hibernate.version>6.6.0.Final</hibernate.version>
 		<reflections.version>0.10.2</reflections.version>
 		<junit.version>5.10.3</junit.version>
 		<h2.version>2.2.224</h2.version>

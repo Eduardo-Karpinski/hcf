@@ -457,7 +457,6 @@ public final class HCFConnection<T> {
         }
 
         criteria.multiselect(selections).where(predicates.toArray(Predicate[]::new));
-
         return session.createQuery(criteria).getResultList();
     }
 
