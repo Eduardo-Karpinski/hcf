@@ -1,6 +1,5 @@
 package com.hcf.utils;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -8,6 +7,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import org.hibernate.Session;
 import org.reflections.Reflections;
 
 import com.hcf.HCFSearch;
@@ -15,7 +15,8 @@ import com.hcf.enums.HCFOperator;
 import com.hcf.enums.HCFParameter;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.metamodel.IdentifiableType;
+import jakarta.persistence.metamodel.Metamodel;
 
 public final class HCFUtil {
 
@@ -38,21 +39,11 @@ public final class HCFUtil {
     	
     	return hcfSearches;
     }
-
-    public static <T> String getId(Class<T> clazz) {
-        Field[] fields = clazz.getDeclaredFields();
-
-        for (Field field : fields) {
-            if (field.isAnnotationPresent(Id.class)) {
-                return field.getName();
-            }
-        }
-
-        if (clazz.getSuperclass().equals(Object.class)) {
-            throw new RuntimeException(Id.class + " not found in fields of " + clazz);
-        }
-
-        return getId(clazz.getSuperclass());
+    
+    public static <T> String getIdFieldName(Session session, Class<T> clazz) {
+    	Metamodel metamodel = session.getEntityManagerFactory().getMetamodel();
+        IdentifiableType<T> entity = (IdentifiableType<T>) metamodel.managedType(clazz);
+        return entity.getId(entity.getIdType().getJavaType()).getName();
     }
 
     public static Set<Class<?>> getAnnotatedClasses() {

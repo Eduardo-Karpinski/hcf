@@ -23,6 +23,7 @@ import com.hcf.utils.HCFUtil;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PersistenceUnitUtil;
 import jakarta.persistence.Tuple;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -166,7 +167,7 @@ public final class HCFConnection<T> {
             CriteriaQuery<T> criteria = builder.createQuery(persistentClass);
             Root<?> root = criteria.from(father);
             Join<?, T> join = root.join(column);
-            criteria.select(join).where(builder.equal(root.get(HCFUtil.getId(father)), id));
+            criteria.select(join).where(builder.equal(root.get(HCFUtil.getIdFieldName(session, father)), id));
             TypedQuery<T> query = session.createQuery(criteria);
             List<T> resultList = query.getResultList();
             resultList.forEach(this::getRelationshipByHCF);
@@ -186,7 +187,7 @@ public final class HCFConnection<T> {
             CriteriaBuilder builder = session.getCriteriaBuilder();
             CriteriaQuery<T> criteria = builder.createQuery(persistentClass);
             Root<T> root = criteria.from(persistentClass);
-            criteria.where(builder.equal(root.join(column).get(HCFUtil.getId(child)), id));
+            criteria.where(builder.equal(root.join(column).get(HCFUtil.getIdFieldName(session, child)), id));
             TypedQuery<T> query = session.createQuery(criteria);
             List<T> resultList = query.getResultList();
             resultList.forEach(this::getRelationshipByHCF);
@@ -207,7 +208,7 @@ public final class HCFConnection<T> {
             CriteriaBuilder builder = session.getCriteriaBuilder();
             CriteriaDelete<T> criteria = builder.createCriteriaDelete(persistentClass);
             Root<T> root = criteria.from(persistentClass);
-            criteria.where(builder.equal(root.get(HCFUtil.getId(persistentClass)), Objects.requireNonNull(id, "Id is null")));
+            criteria.where(builder.equal(root.get(HCFUtil.getIdFieldName(session, persistentClass)), Objects.requireNonNull(id, "Id is null")));
             return session.createMutationQuery(criteria).executeUpdate();
         } catch (Exception e) {
             HCFUtil.showError(e);
@@ -223,7 +224,7 @@ public final class HCFConnection<T> {
             CriteriaBuilder builder = session.getCriteriaBuilder();
             CriteriaQuery<T> criteria = builder.createQuery(persistentClass);
             Root<T> root = criteria.from(persistentClass);
-            criteria.select(root).where(builder.equal(root.get(HCFUtil.getId(persistentClass)), Objects.requireNonNull(id, "Id is null")));
+            criteria.select(root).where(builder.equal(root.get(HCFUtil.getIdFieldName(session, persistentClass)), Objects.requireNonNull(id, "Id is null")));
             TypedQuery<T> query = session.createQuery(criteria);
             T singleResult = query.getSingleResult();
             getRelationshipByHCF(singleResult);
@@ -463,9 +464,15 @@ public final class HCFConnection<T> {
     private void persist(List<T> entities, boolean isSaveOrUpdate) {
         try {
             transaction = session.beginTransaction();
+            PersistenceUnitUtil util = session.getEntityManagerFactory().getPersistenceUnitUtil();
             for (T entity : entities) {
                 if (isSaveOrUpdate) {
-                    session.merge(entity);
+                	Object id = util.getIdentifier(entity);
+                	if (id == null) {
+                        session.persist(entity);
+                    } else {
+                        session.merge(entity);
+                    }
                 } else {
                     session.remove(entity);
                 }
@@ -486,7 +493,7 @@ public final class HCFConnection<T> {
         try {
             Class<?> parentClass = parentObject.getClass();
             if (parentClass.isAnnotationPresent(HCFRelationship.class)) {
-                String idFieldName = HCFUtil.getId(parentClass);
+                String idFieldName = HCFUtil.getIdFieldName(session, parentClass);
                 Field idField = parentClass.getDeclaredField(idFieldName);
                 idField.setAccessible(true);
                 Object id = idField.get(parentObject);

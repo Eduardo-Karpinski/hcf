@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,8 +37,6 @@ import com.hcf.test.entities.DataWithChildren;
 import com.hcf.test.entities.DataWithOutId;
 import com.hcf.test.entities.Permission;
 import com.hcf.utils.HCFUtil;
-
-import jakarta.persistence.Id;
 
 class HCFConnectionTest {
 	
@@ -698,10 +697,13 @@ class HCFConnectionTest {
     }
 
 	@Test
-	void testUtilGetId() {
-		RuntimeException thrown = assertThrows(RuntimeException.class, () -> HCFUtil.getId(DataWithOutId.class),
-				"Expected an error because the class does not have " + Id.class);
-		assertTrue(thrown.getMessage().contains("not found in fields of"));
+	void testGetIdFieldNameShouldFailForInvalidEntity() {
+	    Session session = HCFFactory.INSTANCE.getFactory().openSession();
+	    Class<?> clazz = DataWithOutId.class;
+	    
+	    assertThrows(IllegalArgumentException.class, () -> {
+	        HCFUtil.getIdFieldName(session, clazz);
+	    });
 	}
 	
 	@Test
