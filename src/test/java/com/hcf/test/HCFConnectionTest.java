@@ -110,8 +110,8 @@ class HCFConnectionTest {
 
 	@AfterEach
 	void deleteData() {
-		new HCFConnection<>(Data.class).delete(new HCFConnection<>(Data.class).all());
-		new HCFConnection<>(DataWithChildren.class).delete(new HCFConnection<>(DataWithChildren.class).all());
+		new HCFConnection<>(Data.class).massiveDelete();
+		new HCFConnection<>(DataWithChildren.class).massiveDelete();
 	}
 	
 	@Test

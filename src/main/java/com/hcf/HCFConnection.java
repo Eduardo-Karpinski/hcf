@@ -1,6 +1,9 @@
 package com.hcf;
 
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,7 +40,6 @@ import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Selection;
-import jakarta.persistence.criteria.Subquery;
 
 public final class HCFConnection<T> {
 
@@ -276,19 +278,15 @@ public final class HCFConnection<T> {
 
     public T getFirstOrLast(HCFOrder order) {
         try {
-            CriteriaBuilder builder = session.getCriteriaBuilder();
-            CriteriaQuery<T> criteria = builder.createQuery(persistentClass);
-            Subquery<Long> subquery = criteria.subquery(Long.class);
-            Root<T> root = subquery.from(persistentClass);
-            Path<Long> subPath = root.get(order.getField());
-            root = criteria.from(persistentClass);
-            Path<T> path = root.get(order.getField());
-            subquery.select(order.getAsc() ? builder.min(subPath) : builder.max(subPath));
-            criteria.select(root).where(builder.equal(path, subquery));
-            TypedQuery<T> query = session.createQuery(criteria);
-            T singleResult = query.getSingleResult();
-            getRelationshipByHCF(singleResult);
-            return singleResult;
+        	 CriteriaBuilder builder = session.getCriteriaBuilder();
+             CriteriaQuery<T> criteria = builder.createQuery(persistentClass);
+             Root<T> root = criteria.from(persistentClass);
+             criteria.select(root);
+             Order hibernateOrder = order.getAsc() ? builder.asc(root.get(order.getField())) : builder.desc(root.get(order.getField()));
+             criteria.orderBy(hibernateOrder);
+             T singleResult = session.createQuery(criteria).setMaxResults(1).getSingleResult();
+             getRelationshipByHCF(singleResult);
+             return singleResult;
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
@@ -464,10 +462,10 @@ public final class HCFConnection<T> {
     private void persist(List<T> entities, boolean isSaveOrUpdate) {
         try {
             transaction = session.beginTransaction();
-            PersistenceUnitUtil util = session.getEntityManagerFactory().getPersistenceUnitUtil();
+            PersistenceUnitUtil persistenceUnitUtil = session.getEntityManagerFactory().getPersistenceUnitUtil();
             for (T entity : entities) {
-                if (isSaveOrUpdate) {
-                	Object id = util.getIdentifier(entity);
+            	if (isSaveOrUpdate) {
+                	Object id = persistenceUnitUtil.getIdentifier(entity);
                 	if (id == null) {
                         session.persist(entity);
                     } else {
@@ -492,27 +490,30 @@ public final class HCFConnection<T> {
     private void getRelationshipByHCF(T parentObject) {
         try {
             Class<?> parentClass = parentObject.getClass();
-            if (parentClass.isAnnotationPresent(HCFRelationship.class)) {
-                String idFieldName = HCFUtil.getIdFieldName(session, parentClass);
-                Field idField = parentClass.getDeclaredField(idFieldName);
-                idField.setAccessible(true);
-                Object id = idField.get(parentObject);
-                idField.setAccessible(false);
-
-                for (Field field : parentClass.getDeclaredFields()) {
-                    if (field.isAnnotationPresent(OneToMany.class) || field.isAnnotationPresent(ManyToMany.class)) {
-                        CriteriaBuilder builder = session.getCriteriaBuilder();
-                        CriteriaQuery<Object> criteria = builder.createQuery();
-                        Root<?> root = criteria.from(parentClass);
-                        Join<?, T> join = root.join(field.getName());
-                        criteria.select(join).where(builder.equal(root.get(idFieldName), id));
-                        TypedQuery<Object> query = session.createQuery(criteria);
-                        List<Object> resultList = query.getResultList();
-                        resultList.forEach(t -> getRelationshipByHCF((T) t));
-                        field.setAccessible(true);
-                        field.set(parentObject, resultList);
-                        field.setAccessible(false);
-                    }
+            
+            if (!parentClass.isAnnotationPresent(HCFRelationship.class)) return;
+            
+            Object id = session.getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(parentObject);
+            String idFieldName = HCFUtil.getIdFieldName(session, parentClass);
+            
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            
+            for (PropertyDescriptor pd : Introspector.getBeanInfo(parentClass).getPropertyDescriptors()) {
+            	Field field;
+            	try {
+            		field = parentClass.getDeclaredField(pd.getName());
+				} catch (Exception e) {
+					continue;
+				}
+            	if (field.isAnnotationPresent(OneToMany.class) || field.isAnnotationPresent(ManyToMany.class)) {
+            		Method writeMethod = pd.getWriteMethod();
+                    CriteriaQuery<Object> criteria = builder.createQuery();
+                    Root<?> root = criteria.from(parentClass);
+                    Join<?, T> join = root.join(field.getName());
+                    criteria.select(join).where(builder.equal(root.get(idFieldName), id));
+                    List<Object> resultList = session.createQuery(criteria).getResultList();
+                    resultList.forEach(item -> getRelationshipByHCF((T) item));
+                    writeMethod.invoke(parentObject, resultList);
                 }
             }
         } catch (Exception e) {
