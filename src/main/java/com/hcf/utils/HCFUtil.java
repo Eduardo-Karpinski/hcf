@@ -3,6 +3,7 @@ package com.hcf.utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -26,6 +27,14 @@ public final class HCFUtil {
 
     }
     
+    public static Set<Class<?>> getHCFEntityProviderImpl() {
+    	ServiceLoader<HCFEntityProvider> serviceLoader = ServiceLoader.load(HCFEntityProvider.class);
+    	return serviceLoader.stream()
+    	    .map(ServiceLoader.Provider::get)
+    	    .flatMap(provider -> provider.getEntities().stream())
+    	    .collect(Collectors.toSet());
+	}
+    
     public static List<HCFSearch> varargsToSearch(Object... parameters) {
     	if (parameters.length % 4 != 0) {
             throw new IllegalArgumentException("Parameters is not a multiple of 4.");
@@ -47,6 +56,12 @@ public final class HCFUtil {
     }
 
     public static Set<Class<?>> getAnnotatedClasses() {
+    	Set<Class<?>> byServiceLoader = getHCFEntityProviderImpl();
+    	
+    	if (!byServiceLoader.isEmpty()) {
+			return byServiceLoader;
+		}
+    	
         Set<String> packages = Arrays.stream(Thread.currentThread().getContextClassLoader().getDefinedPackages())
                 .map(Package::getName)
                 .collect(Collectors.toSet());

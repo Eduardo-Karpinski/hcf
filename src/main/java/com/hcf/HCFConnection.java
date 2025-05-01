@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.hibernate.Session;
@@ -134,9 +135,16 @@ public final class HCFConnection<T> {
             CriteriaBuilder builder = session.getCriteriaBuilder();
             CriteriaQuery<T> criteria = builder.createQuery(persistentClass);
             Root<T> root = criteria.from(persistentClass);
-            order(orders, builder, criteria, root);
-            TypedQuery<T> query = limitResults(orders, criteria);
-            List<T> resultList = query.getResultList();
+            
+            List<T> resultList;
+            if (orders != null) {
+            	order(orders, builder, criteria, root);
+            	TypedQuery<T> query = limitResults(orders, criteria);
+            	resultList = query.getResultList();
+			} else {
+				resultList = session.createQuery(criteria).getResultList();
+			}
+            
             resultList.forEach(this::getRelationshipByHCF);
             return resultList;
         } catch (Exception e) {
@@ -148,19 +156,7 @@ public final class HCFConnection<T> {
     }
     
     public List<T> all() {
-        try {
-            CriteriaBuilder builder = session.getCriteriaBuilder();
-            CriteriaQuery<T> criteria = builder.createQuery(persistentClass);
-            criteria.from(persistentClass);
-            List<T> resultList = session.createQuery(criteria).getResultList();
-            resultList.forEach(this::getRelationshipByHCF);
-            return resultList;
-        } catch (Exception e) {
-            HCFUtil.showError(e);
-            return null;
-        } finally {
-            close();
-        }
+    	return all(null);
     }
 
     public List<T> getRelations(Class<?> father, String column, Object id) {
@@ -174,8 +170,6 @@ public final class HCFConnection<T> {
             List<T> resultList = query.getResultList();
             resultList.forEach(this::getRelationshipByHCF);
             return resultList;
-        } catch (NoResultException e) {
-            return null;
         } catch (Exception e) {
             HCFUtil.showError(e);
             return null;
@@ -194,8 +188,6 @@ public final class HCFConnection<T> {
             List<T> resultList = query.getResultList();
             resultList.forEach(this::getRelationshipByHCF);
             return resultList;
-        } catch (NoResultException e) {
-            return null;
         } catch (Exception e) {
             HCFUtil.showError(e);
             return null;
@@ -358,8 +350,7 @@ public final class HCFConnection<T> {
             CriteriaQuery<Long> criteria = builder.createQuery(Long.class);
             Root<T> root = criteria.from(persistentClass);
             criteria.select(builder.count(root));
-            TypedQuery<Long> query = session.createQuery(criteria);
-            return query.getSingleResult();
+            return session.createQuery(criteria).getSingleResult();
         } catch (Exception e) {
             return null;
         } finally {
@@ -569,68 +560,53 @@ public final class HCFConnection<T> {
      * <p>
      * Example of correct usage:
      * List<Data> datas = new HCFConnection<>(Data.class).search(null,
-     * "name", "User 25", HCFParameter.EQUAL, HCFOperator.NONE,
-     * "salary", 8000, HCFParameter.EQUAL, HCFOperator.AND,
-     * "name", "User 26", HCFParameter.EQUAL, HCFOperator.OR);
+     *     "name", "User 25", HCFParameter.EQUAL, HCFOperator.NONE,
+     *     "salary", 8000, HCFParameter.EQUAL, HCFOperator.AND,
+     *     "name", "User 26", HCFParameter.EQUAL, HCFOperator.OR);
      * </p>
      * <p>
      * Example of incorrect usage:
      * List<Data> datas = new HCFConnection<>(Data.class).search(null,
-     * "name", "User 25", HCFParameter.EQUAL, HCFOperator.AND,
-     * "salary", 8000, HCFParameter.EQUAL, HCFOperator.AND,
-     * "name", "User 26", HCFParameter.EQUAL, HCFOperator.OR);
+     *     "name", "User 25", HCFParameter.EQUAL, HCFOperator.AND,
+     *     "salary", 8000, HCFParameter.EQUAL, HCFOperator.AND,
+     *     "name", "User 26", HCFParameter.EQUAL, HCFOperator.OR);
      * </p>
      * <p>
      * In the incorrect example, the first parameter being HCFOperator.AND causes an IndexOutOfBoundsException
      * because there are not enough predicates to combine at the start of the evaluation.
-     * <p/>
+     * </p>
      */
-    private void applyOperator(CriteriaBuilder builder, HCFOperator hcfOperator) {
-        try {
-            switch (hcfOperator) {
-                case OR:
-                    predicates.add(builder.or(predicates.get(predicates.size() - 2), predicates.getLast()));
-                    predicates.remove(predicates.size() - 3);
-                    predicates.remove(predicates.size() - 2);
-                    break;
-                case AND:
-                    predicates.add(builder.and(predicates.get(predicates.size() - 2), predicates.getLast()));
-                    predicates.remove(predicates.size() - 3);
-                    predicates.remove(predicates.size() - 2);
-                    break;
-                default:
-                    break;
-            }
-        } catch (IndexOutOfBoundsException e) {
-            // Caught an IndexOutOfBoundsException in applyOperator method.
-            // The first parameter should have been HCFOperator.NONE to prevent this error,
-            // ensuring proper handling of logical operators (AND, OR) during predicate application.
-            // Despite the error, the search results were not affected due to subsequent valid criteria.
-            HCFUtil.getLogger().warning("[HCF-WARNING] IndexOutOfBoundsException encountered. First parameter should have been HCFOperator.NONE.");
-        }
-    }
+	private void applyOperator(CriteriaBuilder builder, HCFOperator hcfOperator) {
+		if ((hcfOperator == HCFOperator.AND || hcfOperator == HCFOperator.OR) && predicates.size() >= 2) {
+			Predicate right = predicates.removeLast();
+			Predicate left = predicates.removeLast();
+			Predicate combined = hcfOperator == HCFOperator.AND ? builder.and(left, right) : builder.or(left, right);
+			predicates.add(combined);
+		} else if (hcfOperator != HCFOperator.NONE) {
+			HCFUtil.getLogger().warning("[HCF-WARNING] Cannot apply operator '" + hcfOperator + "'. Ensure the first operator is HCFOperator.NONE and that there are at least two predicates to combine.");
+		}
+	}
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private void order(List<HCFOrder> orders, CriteriaBuilder builder, CriteriaQuery criteria, Root<T> root) {
-        if (orders == null) {
-            return;
-        }
-        List<Order> persistenceOrders = orders.stream()
-                .filter(order -> order.getAsc() != null && order.getField() != null)
-                .map(order -> order.getAsc() ? builder.asc(root.get(order.getField())) : builder.desc(root.get(order.getField())))
-                .collect(Collectors.toList());
-        criteria.orderBy(persistenceOrders);
-    }
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private void order(List<HCFOrder> orders, CriteriaBuilder builder, CriteriaQuery criteria, Root<T> root) {
+		Optional.ofNullable(orders)
+				.map(ords -> ords.stream()
+						.filter(order -> order != null && order.getField() != null && order.getAsc() != null)
+						.map(order -> order.getAsc() ? builder.asc(root.get(order.getField())) : builder.desc(root.get(order.getField())))
+						.collect(Collectors.toList()))
+				.filter(list -> !list.isEmpty()).ifPresent(criteria::orderBy);
+	}
 
-    private TypedQuery<T> limitResults(List<HCFOrder> orders, CriteriaQuery<T> criteria) {
-        if (orders == null || orders.isEmpty()) {
-            return session.createQuery(criteria);
-        }
+	private TypedQuery<T> limitResults(List<HCFOrder> orders, CriteriaQuery<T> criteria) {
+		TypedQuery<T> query = session.createQuery(criteria);
+		
+		Optional.ofNullable(orders).ifPresent(ords -> {
+			ords.stream().map(HCFOrder::getOffset).filter(Objects::nonNull).findFirst().ifPresent(query::setFirstResult);
+			ords.stream().map(HCFOrder::getLimit).filter(Objects::nonNull).findFirst().ifPresent(query::setMaxResults);
+		});
 
-        Integer limit = orders.stream().map(HCFOrder::getLimit).filter(Objects::nonNull).findFirst().orElse(null);
-        Integer offset = orders.stream().map(HCFOrder::getOffset).filter(Objects::nonNull).findFirst().orElse(0);
-        return session.createQuery(criteria).setFirstResult(offset).setMaxResults(limit);
-    }
+		return query;
+	}
 
     private void close() {
         if (transaction != null && transaction.getStatus().equals(TransactionStatus.ACTIVE)) {
