@@ -239,25 +239,28 @@ public final class HCFConnection<T> {
 
     public List<Object> sum(List<String> fields, List<HCFSearch> parameters) {
         try {
-            List<Expression<? extends Number>> expressions = new ArrayList<>();
-
             CriteriaBuilder builder = session.getCriteriaBuilder();
             CriteriaQuery<Tuple> criteria = builder.createTupleQuery();
             Root<T> root = criteria.from(persistentClass);
 
-            for (String column : fields) {
+            List<Selection<?>> selections = new ArrayList<>();
+            fields.forEach(column -> {
                 Expression<? extends Number> expression = builder.sum(root.get(column));
-                expression.alias(column);
-                expressions.add(expression);
-            }
+                selections.add(expression.alias(column));
+            });
 
             applyPredicate(builder, root, parameters);
-            criteria.multiselect(expressions.toArray(new Expression[0])).where(predicates.toArray(Predicate[]::new));
+
+            criteria.select(builder.tuple(selections.toArray(new Selection<?>[0])))
+                    .where(predicates.toArray(Predicate[]::new));
+
             TypedQuery<Tuple> query = session.createQuery(criteria);
             Tuple tuple = query.getSingleResult();
-            return expressions.stream()
-                    .map(expression -> tuple.get(expression.getAlias(), Number.class))
+
+            return selections.stream()
+                    .map(selection -> tuple.get(selection.getAlias(), Number.class))
                     .collect(Collectors.toList());
+
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
@@ -440,13 +443,19 @@ public final class HCFConnection<T> {
 
         List<Selection<?>> selections = new ArrayList<>();
         selections.add(root);
-        for (HCFJoinSearch hcfJoinSearch : hcfJoinSearchs) {
-            Root<?> joinRoot = criteria.from(hcfJoinSearch.getJoinClass());
-            predicates.add(builder.equal(root.get(hcfJoinSearch.getPrimaryField()), joinRoot.get(hcfJoinSearch.getForeignField())));
-            selections.add(joinRoot);
-        }
 
-        criteria.multiselect(selections).where(predicates.toArray(Predicate[]::new));
+        hcfJoinSearchs.forEach(hcfJoinSearch -> {
+            Root<?> joinRoot = criteria.from(hcfJoinSearch.getJoinClass());
+            predicates.add(builder.equal(
+                root.get(hcfJoinSearch.getPrimaryField()),
+                joinRoot.get(hcfJoinSearch.getForeignField())
+            ));
+            selections.add(joinRoot);
+        });
+
+        criteria.select(builder.array(selections.toArray(new Selection<?>[0])))
+                .where(predicates.toArray(Predicate[]::new));
+
         return session.createQuery(criteria).getResultList();
     }
 
@@ -454,7 +463,7 @@ public final class HCFConnection<T> {
         try {
             transaction = session.beginTransaction();
             PersistenceUnitUtil persistenceUnitUtil = session.getEntityManagerFactory().getPersistenceUnitUtil();
-            for (T entity : entities) {
+            entities.forEach(entity -> {
             	if (isSaveOrUpdate) {
                 	Object id = persistenceUnitUtil.getIdentifier(entity);
                 	if (id == null) {
@@ -465,7 +474,7 @@ public final class HCFConnection<T> {
                 } else {
                     session.remove(entity);
                 }
-            }
+            });
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) {
@@ -513,11 +522,11 @@ public final class HCFConnection<T> {
     }
 
     private void applyPredicate(CriteriaBuilder builder, Root<T> root, List<HCFSearch> parameters) {
-        for (HCFSearch search : parameters) {
+        parameters.forEach(search -> {
             Path<?> field = root.get(search.getField());
             Comparable<?> value = (Comparable<?>) search.getValue();
             addPredicate(builder, field, value, search.getParameter(), search.getOperator());
-        }
+        });
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
