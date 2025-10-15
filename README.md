@@ -8,7 +8,7 @@ HCF is a generic DAO for database persistence.
     <dependency>
         <groupId>io.github.eduardo-karpinski</groupId>
         <artifactId>hcf-core</artifactId>
-        <version>1.0.2</version>
+        <version>1.0.1</version>
     </dependency>
     ...
 </dependencies>
