@@ -1,126 +1,173 @@
 package com.hcf;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import jakarta.persistence.EntityManager;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.cfg.Configuration;
 
+import com.hcf.utils.HCFLog;
 import com.hcf.utils.HCFUtil;
 
 public enum HCFFactory {
-    INSTANCE;
+	INSTANCE;
 
-    private boolean internal = true;
-    private SessionFactory sessionFactory = null;
-    private String propertiesPath = "hibernate.properties";
+	private boolean internal = true;
+	private String propertiesPath = "hibernate.properties";
+	private volatile SessionFactory sessionFactory = null;
+	private volatile StandardServiceRegistry standardServiceRegistry;
 
-    static {
-        Runtime.getRuntime().addShutdownHook(new Thread(HCFFactory.INSTANCE::shutdown));
-    }
+	static {
+		Runtime.getRuntime().addShutdownHook(new Thread(HCFFactory.INSTANCE::shutdown));
+	}
 
-    public SessionFactory getFactory() {
-        if (sessionFactory == null || sessionFactory.isClosed()) {
-            synchronized (this) {
-                if (sessionFactory == null || sessionFactory.isClosed()) {
-                    StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder();
-                    if (internal) {
-                        registryBuilder.loadProperties(propertiesPath);
-                    } else {
-                        registryBuilder.loadProperties(new File(propertiesPath));
-                    }
-                    StandardServiceRegistry registry = registryBuilder.build();
-                    try {
-                        MetadataSources metadataSources = new MetadataSources(registry);
-                        HCFUtil.getAnnotatedClasses().forEach(metadataSources::addAnnotatedClass);
-                        sessionFactory = metadataSources.buildMetadata().buildSessionFactory();
-                    } catch (Exception e) {
-                        HCFUtil.showError(e);
-                        StandardServiceRegistryBuilder.destroy(registry);
-                    }
-                }
-            }
-        }
-        return sessionFactory;
-    }
+	public SessionFactory getFactory() {
+		if (sessionFactory == null || sessionFactory.isClosed()) {
+			synchronized (this) {
+				if (sessionFactory == null || sessionFactory.isClosed()) {
+					StandardServiceRegistryBuilder standardServiceRegistryBuilder = new StandardServiceRegistryBuilder();
+					if (internal) {
+						standardServiceRegistryBuilder.loadProperties(propertiesPath);
+					} else {
+						standardServiceRegistryBuilder.loadProperties(new File(propertiesPath));
+					}
+					standardServiceRegistry = standardServiceRegistryBuilder.build();
+					try {
+						MetadataSources metadataSources = new MetadataSources(standardServiceRegistry);
+						HCFUtil.getAnnotatedClasses().forEach(metadataSources::addAnnotatedClass);
+						sessionFactory = metadataSources.buildMetadata().buildSessionFactory();
+					} catch (Exception e) {
+						HCFLog.showError(e);
+						StandardServiceRegistryBuilder.destroy(standardServiceRegistry);
+						standardServiceRegistry = null;
+						throw new IllegalStateException("Failed to construct SessionFactory", e);
+					}
+				}
+			}
+		}
+		return sessionFactory;
+	}
 
-    public void setDirectoryProperties(String pathname, boolean isInternal) {
-        propertiesPath = pathname;
-        internal = isInternal;
-    }
+	public synchronized void setDirectoryProperties(String pathname, boolean isInternal) {
+		if (sessionFactory != null && !sessionFactory.isClosed()) {
+			throw new IllegalStateException("Already initialized. Use getNewFactory(..., replaceCurrent=true).");
+		}
+		propertiesPath = pathname;
+		internal = isInternal;
+	}
 
-    public SessionFactory getNewFactory(Map<String, String> propertiesInMap,
-                                        String propertiesPath,
-                                        boolean isFile,
-                                        boolean replaceCurrent,
-                                        boolean useHCFClassCollector,
-                                        Package[] packages,
-                                        Set<Class<?>> classes) {
+	public SessionFactory getNewFactory(
+			Map<String, String> propertiesInMap,
+			String path,
+			boolean replaceCurrent,
+			boolean useHCFClassCollector,
+			Package[] packages,
+			Set<Class<?>> classes) {
+		
+		Properties properties = new Properties();
+		
+		if (path != null && !path.isBlank()) {
+		    properties.putAll(loadPath(path));
+		}
+		
+		if (propertiesInMap != null && !propertiesInMap.isEmpty()) {
+		    propertiesInMap.forEach(properties::setProperty);
+		}
 
-        Configuration configuration = new Configuration();
+		if (properties.isEmpty()) {
+			throw new IllegalStateException("No property was provided");
+		}
+		
+		StandardServiceRegistryBuilder standardServiceRegistryBuilder = new StandardServiceRegistryBuilder().applySettings(properties);
+		StandardServiceRegistry standardServiceRegistry = standardServiceRegistryBuilder.build();
+		
+		try {
+			MetadataSources metadataSources = new MetadataSources(standardServiceRegistry);
+			
+			if (useHCFClassCollector) {
+	            HCFUtil.getAnnotatedClasses().forEach(metadataSources::addAnnotatedClass);
+	        }
+			
+			if (packages != null && packages.length > 0) {
+	            Set<String> pkgNames = Arrays.stream(packages).map(Package::getName).collect(Collectors.toSet());
+	            HCFUtil.getLogger().info("Packages To Read - " + pkgNames);
+	            HCFUtil.getEntities(pkgNames).forEach(metadataSources::addAnnotatedClass);
+	        }
+			
+			if (classes != null && !classes.isEmpty()) {
+				classes.forEach(metadataSources::addAnnotatedClass);
+			}
+			
+			SessionFactory sessionFactory = metadataSources.buildMetadata().buildSessionFactory();
 
-        if (propertiesInMap == null) {
-            StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder();
-            Properties properties = isFile ?
-                    registryBuilder.getConfigLoader().loadProperties(new File(propertiesPath)) :
-                    registryBuilder.getConfigLoader().loadProperties(propertiesPath);
+			if (replaceCurrent) {
+				synchronized (this) {
+					shutdown();
+					this.sessionFactory = sessionFactory;
+					this.standardServiceRegistry = standardServiceRegistry;
+				}
+				return this.sessionFactory;
+			}
+			
+			return sessionFactory;
+		} catch (Exception e) {
+			HCFLog.showError(e);
+			StandardServiceRegistryBuilder.destroy(standardServiceRegistry);
+			throw new IllegalStateException("Failed to construct SessionFactory", e);
+		}
 
-            properties.forEach((key, value) -> configuration.setProperty(key.toString(), value.toString()));
-        } else {
-            propertiesInMap.forEach(configuration::setProperty);
-        }
+	}
+	
+	private Properties loadPath(String path) {
+	    try {
+	        Properties properties = new Properties();
+	        File file = new File(path);
+	        if (file.isFile()) {
+	            try (InputStream inputStream = new FileInputStream(file)) {
+	            	properties.load(inputStream);
+	            }
+	        } else {
+	            try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(path)) {
+	                if (inputStream == null) {
+	                	throw new FileNotFoundException("Classpath resource not found: " + path);
+	                }
+	                properties.load(inputStream);
+	            }
+	        }
+	        return properties;
+	    } catch (IOException e) {
+	        throw new IllegalStateException("Failed to load properties from: " + path, e);
+	    }
+	}
 
-        if (useHCFClassCollector) {
-            HCFUtil.getAnnotatedClasses().forEach(configuration::addAnnotatedClass);
-        } else {
-            if (packages != null) {
-                Set<String> packageNames = Arrays.stream(packages)
-                        .map(Package::getName)
-                        .collect(Collectors.toSet());
-                HCFUtil.getLogger().info("Packages To Read - " + packageNames);
-                HCFUtil.getEntities(packageNames).forEach(configuration::addAnnotatedClass);
-            }
-            Optional.ofNullable(classes).ifPresent(classesOptional -> classesOptional.forEach(configuration::addAnnotatedClass));
-        }
+	public void shutdown() {
+		try {
+			if (sessionFactory == null) {
+				return;
+			}
 
-        SessionFactory newFactory = configuration.buildSessionFactory();
+			if (sessionFactory.isOpen()) {
+				sessionFactory.close();
+			}
 
-        if (replaceCurrent) {
-            shutdown();
-            sessionFactory = newFactory;
-            getAnnotatedClasses();
-            return sessionFactory;
-        }
-
-        return newFactory;
-    }
-
-    public void getAnnotatedClasses() {
-        try (EntityManager em = sessionFactory.createEntityManager()) {
-            HCFUtil.getLogger().info("Annotated Classes - " + em.getMetamodel().getEntities());
-        } catch (Exception e) {
-            HCFUtil.showError(e);
-        }
-    }
-
-    public void shutdown() {
-        try {
-            if (sessionFactory != null && sessionFactory.isOpen()) {
-                sessionFactory.close();
-            }
-        } catch (Exception e) {
-            HCFUtil.showError(e);
-        }
-    }
+			if (sessionFactory.isClosed()) {
+				StandardServiceRegistryBuilder.destroy(standardServiceRegistry);
+				sessionFactory = null;
+				standardServiceRegistry = null;
+			}
+		} catch (Exception e) {
+			HCFLog.showError(e);
+		}
+	}
 
 }

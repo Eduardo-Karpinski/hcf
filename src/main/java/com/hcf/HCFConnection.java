@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.hibernate.Session;
@@ -22,6 +21,7 @@ import org.hibernate.resource.transaction.spi.TransactionStatus;
 import com.hcf.annotations.HCFRelationship;
 import com.hcf.enums.HCFOperator;
 import com.hcf.enums.HCFParameter;
+import com.hcf.utils.HCFLog;
 import com.hcf.utils.HCFUtil;
 
 import jakarta.persistence.ManyToMany;
@@ -99,7 +99,7 @@ public final class HCFConnection<T> {
             criteria.where(predicates.toArray(Predicate[]::new));
             return session.createMutationQuery(criteria).executeUpdate();
         } catch (Exception e) {
-            HCFUtil.showError(e);
+        	HCFLog.showError(e);
             if (transaction != null) transaction.rollback();
             return -1;
         } finally {
@@ -122,57 +122,9 @@ public final class HCFConnection<T> {
             criteria.where(predicates.toArray(Predicate[]::new));
             return session.createMutationQuery(criteria).executeUpdate();
         } catch (Exception e) {
-            HCFUtil.showError(e);
+        	HCFLog.showError(e);
             if (transaction != null) transaction.rollback();
             return -1;
-        } finally {
-            close();
-        }
-    }
-
-    public List<T> all(List<HCFOrder> orders) {
-        try {
-            CriteriaBuilder builder = session.getCriteriaBuilder();
-            CriteriaQuery<T> criteria = builder.createQuery(persistentClass);
-            Root<T> root = criteria.from(persistentClass);
-            
-            List<T> resultList;
-            if (orders != null) {
-            	order(orders, builder, criteria, root);
-            	TypedQuery<T> query = limitResults(orders, criteria);
-            	resultList = query.getResultList();
-			} else {
-				resultList = session.createQuery(criteria).getResultList();
-			}
-            
-            resultList.forEach(this::getRelationshipByHCF);
-            return resultList;
-        } catch (Exception e) {
-            HCFUtil.showError(e);
-            return null;
-        } finally {
-            close();
-        }
-    }
-    
-    public List<T> all() {
-    	return all(null);
-    }
-
-    public List<T> getRelations(Class<?> father, String column, Object id) {
-        try {
-            CriteriaBuilder builder = session.getCriteriaBuilder();
-            CriteriaQuery<T> criteria = builder.createQuery(persistentClass);
-            Root<?> root = criteria.from(father);
-            Join<?, T> join = root.join(column);
-            criteria.select(join).where(builder.equal(root.get(HCFUtil.getIdFieldName(session, father)), id));
-            TypedQuery<T> query = session.createQuery(criteria);
-            List<T> resultList = query.getResultList();
-            resultList.forEach(this::getRelationshipByHCF);
-            return resultList;
-        } catch (Exception e) {
-            HCFUtil.showError(e);
-            return null;
         } finally {
             close();
         }
@@ -189,44 +141,7 @@ public final class HCFConnection<T> {
             resultList.forEach(this::getRelationshipByHCF);
             return resultList;
         } catch (Exception e) {
-            HCFUtil.showError(e);
-            return null;
-        } finally {
-            close();
-        }
-    }
-
-    public int deleteById(Object id) {
-        try {
-            transaction = session.beginTransaction();
-            CriteriaBuilder builder = session.getCriteriaBuilder();
-            CriteriaDelete<T> criteria = builder.createCriteriaDelete(persistentClass);
-            Root<T> root = criteria.from(persistentClass);
-            criteria.where(builder.equal(root.get(HCFUtil.getIdFieldName(session, persistentClass)), Objects.requireNonNull(id, "Id is null")));
-            return session.createMutationQuery(criteria).executeUpdate();
-        } catch (Exception e) {
-            HCFUtil.showError(e);
-            if (transaction != null) transaction.rollback();
-            return -1;
-        } finally {
-            close();
-        }
-    }
-
-    public T getById(Object id) {
-        try {
-            CriteriaBuilder builder = session.getCriteriaBuilder();
-            CriteriaQuery<T> criteria = builder.createQuery(persistentClass);
-            Root<T> root = criteria.from(persistentClass);
-            criteria.select(root).where(builder.equal(root.get(HCFUtil.getIdFieldName(session, persistentClass)), Objects.requireNonNull(id, "Id is null")));
-            TypedQuery<T> query = session.createQuery(criteria);
-            T singleResult = query.getSingleResult();
-            getRelationshipByHCF(singleResult);
-            return singleResult;
-        } catch (NoResultException e) {
-            return null;
-        } catch (Exception e) {
-            HCFUtil.showError(e);
+            HCFLog.showError(e);
             return null;
         } finally {
             close();
@@ -264,7 +179,7 @@ public final class HCFConnection<T> {
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
-            HCFUtil.showError(e);
+            HCFLog.showError(e);
             return null;
         } finally {
             close();
@@ -285,7 +200,7 @@ public final class HCFConnection<T> {
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
-            HCFUtil.showError(e);
+            HCFLog.showError(e);
             return null;
         } finally {
             close();
@@ -301,20 +216,20 @@ public final class HCFConnection<T> {
             session.createNativeQuery(sql, Object.class).executeUpdate();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
-            HCFUtil.showError(e);
+            HCFLog.showError(e);
         } finally {
             if (transaction != null && transaction.getStatus().equals(TransactionStatus.ACTIVE)) {
                 try {
                     transaction.commit();
                 } catch (Exception e) {
-                    HCFUtil.showError(e);
+                    HCFLog.showError(e);
                 }
             }
             if (session != null && session.isOpen()) {
                 try {
                     session.close();
                 } catch (Exception e) {
-                    HCFUtil.showError(e);
+                    HCFLog.showError(e);
                 }
             }
         }
@@ -325,7 +240,7 @@ public final class HCFConnection<T> {
             NativeQuery<T> nativeQuery = session.createNativeQuery(sql, persistentClass);
             return nativeQuery.getResultList();
         } catch (Exception e) {
-            HCFUtil.showError(e);
+            HCFLog.showError(e);
             return null;
         } finally {
             close();
@@ -338,7 +253,7 @@ public final class HCFConnection<T> {
             session = HCFFactory.INSTANCE.getFactory().openSession();
             return session.createNativeQuery(sql, Object.class).getResultList();
         } catch (Exception e) {
-            HCFUtil.showError(e);
+            HCFLog.showError(e);
             return null;
         } finally {
             if (session != null && session.isOpen()) {
@@ -359,104 +274,6 @@ public final class HCFConnection<T> {
         } finally {
             close();
         }
-    }
-
-    public List<Object> getDistinctField(String field, Object... parameters) {
-        return getDistinctField(field, HCFUtil.varargsToSearch(parameters));
-    }
-
-    public List<Object> getDistinctField(String field, List<HCFSearch> parameters) {
-        try {
-            CriteriaBuilder builder = session.getCriteriaBuilder();
-            CriteriaQuery<Object> criteria = builder.createQuery(Object.class);
-            Root<T> root = criteria.from(persistentClass);
-            applyPredicate(builder, root, parameters);
-            criteria.select(root.get(field)).distinct(true).where(predicates.toArray(Predicate[]::new)).orderBy(builder.asc(root.get(field)));
-            TypedQuery<Object> query = session.createQuery(criteria);
-            return query.getResultList();
-        } catch (Exception e) {
-            HCFUtil.showError(e);
-            return null;
-        } finally {
-            close();
-        }
-    }
-
-    public T searchWithOneResult(List<HCFOrder> orders, Object... parameters) {
-        return searchWithOneResult(orders, HCFUtil.varargsToSearch(parameters));
-    }
-
-    public T searchWithOneResult(List<HCFOrder> orders, List<HCFSearch> parameters) {
-        try {
-            CriteriaBuilder builder = session.getCriteriaBuilder();
-            CriteriaQuery<T> criteria = builder.createQuery(persistentClass);
-            Root<T> root = criteria.from(persistentClass);
-            order(orders, builder, criteria, root);
-            applyPredicate(builder, root, parameters);
-            criteria.select(root).where(predicates.toArray(Predicate[]::new));
-            TypedQuery<T> query = limitResults(orders, criteria);
-            T singleResult = query.getSingleResult();
-            getRelationshipByHCF(singleResult);
-            return singleResult;
-        } catch (NoResultException e) {
-            return null;
-        } catch (Exception e) {
-            HCFUtil.showError(e);
-            return null;
-        } finally {
-            close();
-        }
-    }
-
-    public List<T> search(List<HCFOrder> orders, Object... parameters) {
-        return search(orders, HCFUtil.varargsToSearch(parameters));
-    }
-
-    public List<T> search(List<HCFOrder> orders, List<HCFSearch> parameters) {
-        try {
-            CriteriaBuilder builder = session.getCriteriaBuilder();
-            CriteriaQuery<T> criteria = builder.createQuery(persistentClass);
-            Root<T> root = criteria.from(persistentClass);
-            order(orders, builder, criteria, root);
-            applyPredicate(builder, root, parameters);
-            criteria.select(root).where(predicates.toArray(Predicate[]::new));
-            TypedQuery<T> query = limitResults(orders, criteria);
-            List<T> resultList = query.getResultList();
-            resultList.forEach(this::getRelationshipByHCF);
-            return resultList;
-        } catch (NoResultException e) {
-            return null;
-        } catch (Exception e) {
-            HCFUtil.showError(e);
-            return null;
-        } finally {
-            close();
-        }
-    }
-
-    public List<Object[]> searchWithJoin(List<HCFOrder> orders, List<HCFSearch> parameters, List<HCFJoinSearch> hcfJoinSearchs) {
-        CriteriaBuilder builder = session.getCriteriaBuilder();
-        CriteriaQuery<Object[]> criteria = builder.createQuery(Object[].class);
-        Root<T> root = criteria.from(persistentClass);
-        order(orders, builder, criteria, root);
-        applyPredicate(builder, root, parameters);
-
-        List<Selection<?>> selections = new ArrayList<>();
-        selections.add(root);
-
-        hcfJoinSearchs.forEach(hcfJoinSearch -> {
-            Root<?> joinRoot = criteria.from(hcfJoinSearch.getJoinClass());
-            predicates.add(builder.equal(
-                root.get(hcfJoinSearch.getPrimaryField()),
-                joinRoot.get(hcfJoinSearch.getForeignField())
-            ));
-            selections.add(joinRoot);
-        });
-
-        criteria.select(builder.array(selections.toArray(new Selection<?>[0])))
-                .where(predicates.toArray(Predicate[]::new));
-
-        return session.createQuery(criteria).getResultList();
     }
 
     private void persist(List<T> entities, boolean isSaveOrUpdate) {
@@ -517,7 +334,7 @@ public final class HCFConnection<T> {
                 }
             }
         } catch (Exception e) {
-            HCFUtil.showError(e);
+            HCFLog.showError(e);
         }
     }
 
@@ -596,40 +413,19 @@ public final class HCFConnection<T> {
 		}
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private void order(List<HCFOrder> orders, CriteriaBuilder builder, CriteriaQuery criteria, Root<T> root) {
-		Optional.ofNullable(orders)
-				.map(ords -> ords.stream()
-						.filter(order -> order != null && order.getField() != null && order.getAsc() != null)
-						.map(order -> order.getAsc() ? builder.asc(root.get(order.getField())) : builder.desc(root.get(order.getField())))
-						.collect(Collectors.toList()))
-				.filter(list -> !list.isEmpty()).ifPresent(criteria::orderBy);
-	}
-
-	private TypedQuery<T> limitResults(List<HCFOrder> orders, CriteriaQuery<T> criteria) {
-		TypedQuery<T> query = session.createQuery(criteria);
-		
-		Optional.ofNullable(orders).ifPresent(ords -> {
-			ords.stream().map(HCFOrder::getOffset).filter(Objects::nonNull).findFirst().ifPresent(query::setFirstResult);
-			ords.stream().map(HCFOrder::getLimit).filter(Objects::nonNull).findFirst().ifPresent(query::setMaxResults);
-		});
-
-		return query;
-	}
-
     private void close() {
         if (transaction != null && transaction.getStatus().equals(TransactionStatus.ACTIVE)) {
             try {
                 transaction.commit();
             } catch (Exception e) {
-                HCFUtil.showError(e);
+                HCFLog.showError(e);
             }
         }
         if (session != null && session.isOpen()) {
             try {
                 session.close();
             } catch (Exception e) {
-                HCFUtil.showError(e);
+                HCFLog.showError(e);
             }
         }
     }

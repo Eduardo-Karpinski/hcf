@@ -21,7 +21,7 @@ import jakarta.persistence.metamodel.Metamodel;
 
 public final class HCFUtil {
 
-    private static final Logger logger = Logger.getLogger("HCF");
+    private static final Logger LOGGER = Logger.getLogger("HCF");
 
     private HCFUtil() {
 
@@ -65,9 +65,9 @@ public final class HCFUtil {
         Set<String> packages = Arrays.stream(Thread.currentThread().getContextClassLoader().getDefinedPackages())
                 .map(Package::getName)
                 .collect(Collectors.toSet());
-        logger.info("Packages To Read - " + packages);
+        LOGGER.info("Packages To Read - " + packages);
         Set<Class<?>> typesAnnotatedWith = getEntities(packages);
-        logger.info("Annotated Classes - " + typesAnnotatedWith);
+        LOGGER.info("Annotated Classes - " + typesAnnotatedWith);
         return typesAnnotatedWith;
     }
 
@@ -76,26 +76,8 @@ public final class HCFUtil {
         return reflections.getTypesAnnotatedWith(Entity.class);
     }
 
-    public static void showError(Exception exception) {
-        logger.severe("[HCF-ERROR] Exception caught:");
-
-        String exceptionType = exception.getClass().getSimpleName();
-        String message = exception.getMessage();
-
-        StringBuilder stackTraceBuilder = new StringBuilder();
-        for (StackTraceElement element : exception.getStackTrace()) {
-            stackTraceBuilder.append("\tat ").append(element.toString()).append("\n");
-        }
-
-        String stackTrace = stackTraceBuilder.toString();
-
-        logger.severe("[HCF-ERROR] Exception Type: " + exceptionType);
-        logger.severe("[HCF-ERROR] Message: " + message);
-        logger.severe("[HCF-ERROR] StackTrace:\n" + stackTrace);
-    }
-
     public static Logger getLogger() {
-        return logger;
+        return LOGGER;
     }
 
 }

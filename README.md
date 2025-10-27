@@ -18,18 +18,13 @@ HCF is a generic DAO for database persistence.
 ```
 # example hibernate.properties
 # mysql database used for reference
-# property hibernate.c3p0 need hibernate-c3p0 dependency to work
 
 # hibernate
 hibernate.connection.username=user
 hibernate.connection.password=pass
 hibernate.connection.driver_class=com.mysql.cj.jdbc.Driver
 hibernate.connection.url=jdbc:mysql://localhost:3306/db?useTimezone=true&serverTimezone=America/Sao_Paulo
-# c3p0
-hibernate.c3p0.min_size=5
-hibernate.c3p0.max_size=10
-hibernate.c3p0.timeout=3000
-hibernate.c3p0.max_statements=30
+
 # others
 hibernate.hbm2ddl.auto=update
 hibernate.session.events.log.LOG_QUERIES_SLOWER_THAN_MS=500
