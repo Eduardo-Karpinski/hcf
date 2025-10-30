@@ -5,11 +5,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.MetadataSources;
@@ -71,7 +69,6 @@ public enum HCFFactory {
 			String path,
 			boolean replaceCurrent,
 			boolean useHCFClassCollector,
-			Package[] packages,
 			Set<Class<?>> classes) {
 		
 		Properties properties = new Properties();
@@ -96,12 +93,6 @@ public enum HCFFactory {
 			
 			if (useHCFClassCollector) {
 	            HCFUtil.getAnnotatedClasses().forEach(metadataSources::addAnnotatedClass);
-	        }
-			
-			if (packages != null && packages.length > 0) {
-	            Set<String> pkgNames = Arrays.stream(packages).map(Package::getName).collect(Collectors.toSet());
-	            HCFUtil.getLogger().info("Packages To Read - " + pkgNames);
-	            HCFUtil.getEntities(pkgNames).forEach(metadataSources::addAnnotatedClass);
 	        }
 			
 			if (classes != null && !classes.isEmpty()) {

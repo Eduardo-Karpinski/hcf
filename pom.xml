@@ -25,9 +25,9 @@
 			<version>${hibernate.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.reflections</groupId>
-			<artifactId>reflections</artifactId>
-			<version>${reflections.version}</version>
+		    <groupId>io.github.classgraph</groupId>
+		    <artifactId>classgraph</artifactId>
+		    <version>${classgraph.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
@@ -106,8 +106,8 @@
 	</build>
 	<properties>
 		<java.version>21</java.version>
-		<hibernate.version>7.0.0.Final</hibernate.version>
-		<reflections.version>0.10.2</reflections.version>
+		<hibernate.version>7.1.5.Final</hibernate.version>
+		<classgraph.version>4.8.184</classgraph.version>
 		<junit.version>5.12.2</junit.version>
 		<h2.version>2.3.232</h2.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

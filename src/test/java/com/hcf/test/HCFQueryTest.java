@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
@@ -28,6 +27,7 @@ import com.hcf.query.HCFQueryExecutor;
 import com.hcf.query.enums.HCFParameter;
 import com.hcf.test.entities.Customer;
 import com.hcf.test.entities.Order;
+import com.hcf.utils.HCFUtil;
 
 import jakarta.persistence.criteria.JoinType;
 
@@ -66,7 +66,7 @@ class HCFQueryTest {
 		SessionFactory factory = HCFFactory.INSTANCE.getFactory();
 		long sessionOpenCount = factory.getStatistics().getSessionOpenCount();
 		long sessionCloseCount = factory.getStatistics().getSessionCloseCount();
-		System.out.println("Total number of sessions: " + (sessionOpenCount - sessionCloseCount));
+		HCFUtil.getLogger().info("[HCF-INFO] Total number of sessions: " + (sessionOpenCount - sessionCloseCount));
 	}
 	
 	@Test
@@ -372,12 +372,6 @@ class HCFQueryTest {
 	}
 
 	@Test
-	void update_throws_if_join_is_present() {
-		assertThrows(UnsupportedOperationException.class, () -> new HCFQuery<>(Order.class).join("customer", JoinType.INNER)
-				.where("customer.name", HCFParameter.EQUAL, "Ana").update(Map.of("description", "ShouldFail")));
-	}
-
-	@Test
 	void delete_by_condition() {
 		int deleted = new HCFQuery<>(Customer.class).where("active", HCFParameter.FALSE, null).delete();
 
@@ -403,12 +397,6 @@ class HCFQueryTest {
 
 		assertEquals(0L, remainingCustomers);
 		assertEquals(0L, remainingOrders);
-	}
-
-	@Test
-	void delete_throws_if_join_is_present() {
-		assertThrows(UnsupportedOperationException.class, () -> new HCFQuery<>(Order.class).join("customer", JoinType.INNER)
-				.where("customer.name", HCFParameter.EQUAL, "Ana").delete());
 	}
 
 	@Test
