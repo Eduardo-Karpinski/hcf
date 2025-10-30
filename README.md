@@ -35,7 +35,7 @@ https://github.com/Eduardo-Karpinski/hcf/wiki
 
 ## Built with
 * [hibernate-orm](https://github.com/hibernate/hibernate-orm) - Framework used.
-* [reflections](https://github.com/ronmamo/reflections) - Framework used.
+* [classgraph](https://github.com/classgraph/classgraph) - Framework used.
 
 ## Authors
 * **Eduardo W. K. Priester** - *developer* - [github](https://github.com/Eduardo-Karpinski)
