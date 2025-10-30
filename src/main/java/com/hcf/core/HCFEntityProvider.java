@@ -1,4 +1,4 @@
-package com.hcf.utils;
+package com.hcf.core;
 
 import java.util.Set;
 

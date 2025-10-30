@@ -1,4 +1,4 @@
-package com.hcf.enums;
+package com.hcf.query.enums;
 
 public enum HCFOperator {
     OR,

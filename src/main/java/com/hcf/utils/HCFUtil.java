@@ -11,9 +11,10 @@ import java.util.stream.Collectors;
 import org.hibernate.Session;
 import org.reflections.Reflections;
 
-import com.hcf.HCFSearch;
-import com.hcf.enums.HCFOperator;
-import com.hcf.enums.HCFParameter;
+import com.hcf.core.HCFEntityProvider;
+import com.hcf.query.HCFSearch;
+import com.hcf.query.enums.HCFOperator;
+import com.hcf.query.enums.HCFParameter;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.metamodel.IdentifiableType;
@@ -28,7 +29,7 @@ public final class HCFUtil {
     }
     
     public static Set<Class<?>> getHCFEntityProviderImpl() {
-    	ServiceLoader<HCFEntityProvider> serviceLoader = ServiceLoader.load(HCFEntityProvider.class);
+    	ServiceLoader<HCFEntityProvider> serviceLoader = ServiceLoader.load(HCFEntityProvider.class, HCFUtil.class.getClassLoader());
     	return serviceLoader.stream()
     	    .map(ServiceLoader.Provider::get)
     	    .flatMap(provider -> provider.getEntities().stream())

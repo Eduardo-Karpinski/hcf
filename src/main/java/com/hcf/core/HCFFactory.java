@@ -1,4 +1,4 @@
-package com.hcf;
+package com.hcf.core;
 
 import java.io.File;
 import java.io.FileInputStream;

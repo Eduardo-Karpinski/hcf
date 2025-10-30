@@ -1,9 +1,9 @@
-package com.hcf;
+package com.hcf.query;
 
 import java.util.Objects;
 
-import com.hcf.enums.HCFOperator;
-import com.hcf.enums.HCFParameter;
+import com.hcf.query.enums.HCFOperator;
+import com.hcf.query.enums.HCFParameter;
 
 public class HCFSearch {
 

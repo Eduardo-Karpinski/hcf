@@ -9,26 +9,32 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.hibernate.SessionFactory;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
-import com.hcf.HCFConnection;
-import com.hcf.HCFQuery;
-import com.hcf.HCFSql;
-import com.hcf.enums.HCFParameter;
+import com.hcf.core.HCFFactory;
+import com.hcf.core.HCFRepository;
+import com.hcf.query.HCFQuery;
+import com.hcf.query.HCFQueryExecutor;
+import com.hcf.query.enums.HCFParameter;
 import com.hcf.test.entities.Customer;
 import com.hcf.test.entities.Order;
 
 import jakarta.persistence.criteria.JoinType;
 
 class HCFQueryTest {
-
+	
 	@BeforeEach
-	void seed() {
+	void seed(TestInfo testInfo) {
 		Customer ana = new Customer("Ana", 28, true, LocalDateTime.of(2025, 1, 10, 9, 0));
 		ana.addOrder(new Order("Pedido A1", new BigDecimal("100.00"), LocalDateTime.of(2025, 1, 11, 10, 0)));
 
@@ -37,15 +43,30 @@ class HCFQueryTest {
 
 		Customer carla = new Customer("Carla", 41, false, LocalDateTime.of(2024, 12, 31, 23, 59));
 
-		new HCFConnection<>(Customer.class).save(ana);
-		new HCFConnection<>(Customer.class).save(bia);
-		new HCFConnection<>(Customer.class).save(carla);
+		HCFRepository<Customer> hcfRepository = new HCFRepository<>(Customer.class).manageSessionExternally(true);
+		hcfRepository.saveAll(Arrays.asList(ana, bia));
+		hcfRepository.save(carla);
+		hcfRepository.closeIfExternallyManaged();
 	}
 
 	@AfterEach
 	void cleanup() {
-		new HCFConnection<>(Order.class).massiveDelete();
-		new HCFConnection<>(Customer.class).massiveDelete();
+		new HCFRepository<>(Order.class).bulkDelete();
+		new HCFRepository<>(Customer.class).bulkDelete();
+	}
+	
+	@BeforeAll
+	static void startStatistics() {
+		SessionFactory factory = HCFFactory.INSTANCE.getFactory();
+		factory.getStatistics().setStatisticsEnabled(true);
+	}
+	
+	@AfterAll
+	static void showStatistics() {
+		SessionFactory factory = HCFFactory.INSTANCE.getFactory();
+		long sessionOpenCount = factory.getStatistics().getSessionOpenCount();
+		long sessionCloseCount = factory.getStatistics().getSessionCloseCount();
+		System.out.println("Total number of sessions: " + (sessionOpenCount - sessionCloseCount));
 	}
 	
 	@Test
@@ -255,7 +276,7 @@ class HCFQueryTest {
 	@Test
 	void left_join_keeps_orders_without_customer() {
 		var orphan = new Order("Pedido ORFAO", new BigDecimal("77.77"), LocalDateTime.of(2025, 2, 1, 12, 0));
-		new HCFConnection<>(Order.class).save(orphan);
+		new HCFRepository<>(Order.class).save(orphan);
 
 		var rows = new HCFQuery<>(Order.class).join("customer", JoinType.LEFT).orderBy("id").listJoined();
 
@@ -352,7 +373,7 @@ class HCFQueryTest {
 
 	@Test
 	void update_throws_if_join_is_present() {
-		assertThrows(IllegalStateException.class, () -> new HCFQuery<>(Order.class).join("customer", JoinType.INNER)
+		assertThrows(UnsupportedOperationException.class, () -> new HCFQuery<>(Order.class).join("customer", JoinType.INNER)
 				.where("customer.name", HCFParameter.EQUAL, "Ana").update(Map.of("description", "ShouldFail")));
 	}
 
@@ -386,7 +407,7 @@ class HCFQueryTest {
 
 	@Test
 	void delete_throws_if_join_is_present() {
-		assertThrows(IllegalStateException.class, () -> new HCFQuery<>(Order.class).join("customer", JoinType.INNER)
+		assertThrows(UnsupportedOperationException.class, () -> new HCFQuery<>(Order.class).join("customer", JoinType.INNER)
 				.where("customer.name", HCFParameter.EQUAL, "Ana").delete());
 	}
 
@@ -431,7 +452,7 @@ class HCFQueryTest {
 
 	@Test
 	void native_tuple_select_with_HCFSql_list() {
-		var rows = HCFSql.list("""
+		var rows = HCFQueryExecutor.listNative("""
 				    select c.name, count(o.id)
 				    from Customer c
 				    left join Orders o on o.customer_id = c.id
@@ -458,7 +479,7 @@ class HCFQueryTest {
 
 	@Test
 	void native_typed_select_with_HCFSql_list_entity() {
-		var list = HCFSql.list("""
+		var list = HCFQueryExecutor.listNative("""
 				    select *
 				    from customer
 				    where name = 'Ana'
@@ -473,7 +494,7 @@ class HCFQueryTest {
 
 	@Test
 	void native_execute_update_sets_active_false() {
-		int updated = HCFSql.execute("""
+		int updated = HCFQueryExecutor.executeNative("""
 				    update customer
 				    set active = false
 				    where name = 'Bia'
@@ -488,7 +509,7 @@ class HCFQueryTest {
 
 	@Test
 	void native_execute_insert_and_delete_customer() {
-		int inserted = HCFSql.execute("""
+		int inserted = HCFQueryExecutor.executeNative("""
 				    insert into Customer (name, age, active, registeredAt)
 				    values ('Dora', 30, true, TIMESTAMP '2025-04-01 10:00:00')
 				""");
@@ -498,7 +519,7 @@ class HCFQueryTest {
 		assertNotNull(dora);
 		assertEquals(30, dora.getAge());
 
-		int deleted = HCFSql.execute("""
+		int deleted = HCFQueryExecutor.executeNative("""
 				    delete from Customer
 				    where name = 'Dora'
 				""");
@@ -525,7 +546,7 @@ class HCFQueryTest {
 	
 	@Test
 	void native_execute_insert_and_delete_customer_named_params() {
-	    int inserted = HCFSql.execute("""
+	    int inserted = HCFQueryExecutor.executeNative("""
 	        insert into customer (name, age, active, registeredAt)
 	        values (:name, :age, :active, :registeredAt)
 	    """, Map.of(
@@ -543,7 +564,7 @@ class HCFQueryTest {
 	    assertEquals(30, dora.getAge());
 	    assertTrue(dora.getActive());
 
-	    int deleted = HCFSql.execute("""
+	    int deleted = HCFQueryExecutor.executeNative("""
 	        delete from customer
 	        where name = :name
 	    """, Map.of("name", "Dora"));
@@ -557,7 +578,7 @@ class HCFQueryTest {
 
 	@Test
 	void native_tuple_select_with_HCFSql_list_named_params() {
-	    var rows = HCFSql.list("""
+	    var rows = HCFQueryExecutor.listNative("""
 	        select c.name, count(o.id)
 	        from customer c
 	        left join orders o on o.customer_id = c.id
@@ -591,7 +612,7 @@ class HCFQueryTest {
 	    assertNotNull(carla);
 	    assertFalse(carla.getActive());
 
-	    int updated = HCFSql.execute("""
+	    int updated = HCFQueryExecutor.executeNative("""
 	        update customer
 	        set active = :active
 	        where name = :name

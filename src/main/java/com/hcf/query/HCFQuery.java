@@ -1,9 +1,7 @@
-package com.hcf;
+package com.hcf.query;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,8 +11,9 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 
-import com.hcf.enums.HCFOperator;
-import com.hcf.enums.HCFParameter;
+import com.hcf.core.HCFFactory;
+import com.hcf.query.enums.HCFOperator;
+import com.hcf.query.enums.HCFParameter;
 import com.hcf.utils.HCFLog;
 import com.hcf.utils.HCFPredicateUtil;
 import com.hcf.utils.HCFUtil;
@@ -42,34 +41,15 @@ import jakarta.persistence.criteria.Selection;
 
 public final class HCFQuery<T> {
 
+	private Integer limit, offset;
+	
 	private final Class<T> type;
 	private final Session session;
-
-	@FunctionalInterface
-	private interface Condition {
-		Predicate build(CriteriaBuilder cb, Root<?> root, Map<String, From<?, ?>> joins);
-	}
-
-	private final List<Condition> conditions = new ArrayList<>();
-	private final List<HCFOperator> operators = new ArrayList<>();
-
-	private static final class OrderSpec {
-		final String fieldPath;
-		final boolean asc;
-
-		OrderSpec(String fieldPath, boolean asc) {
-			this.fieldPath = fieldPath;
-			this.asc = asc;
-		}
-	}
-
-	private final List<OrderSpec> orderSpecs = new ArrayList<>();
-
-	private Integer limit, offset;
-
+	private final List<HCFSort> orders = new ArrayList<>();
+	private final List<HCFSearch> searches = new ArrayList<>();
 	private final LinkedHashMap<String, JoinType> joinAssociations = new LinkedHashMap<>();
-	private final LinkedHashMap<String, JoinType> fetchJoinAssociations = new LinkedHashMap<>();
 	private final LinkedHashMap<String, JoinType> fetchAssociations = new LinkedHashMap<>();
+	private final LinkedHashMap<String, JoinType> fetchJoinAssociations = new LinkedHashMap<>();
 	
 	public HCFQuery(Class<T> type) {
 		this(HCFFactory.INSTANCE.getFactory(), type);
@@ -139,7 +119,7 @@ public final class HCFQuery<T> {
 
 	public HCFQuery<T> orderBy(String fieldPath, boolean asc) {
 		Objects.requireNonNull(fieldPath, "orderBy fieldPath is null");
-		orderSpecs.add(new OrderSpec(fieldPath, asc));
+		orders.add(new HCFSort(fieldPath, asc));
 		return this;
 	}
 
@@ -168,11 +148,11 @@ public final class HCFQuery<T> {
 				cq.distinct(true);
 			}
 
-			Predicate combined = buildCombinedPredicate(cb, root, joins);
+			Predicate combined = HCFPredicateUtil.buildForJoins(cb, root, joins, searches);
 			if (combined != null)
 				cq.where(combined);
 
-			if (!orderSpecs.isEmpty())
+			if (!orders.isEmpty())
 				cq.orderBy(buildOrders(cb, root, joins));
 
 			TypedQuery<T> q = session.createQuery(cq);
@@ -213,11 +193,11 @@ public final class HCFQuery<T> {
 			}
 			cq.select(cb.array(selections.toArray(new Selection<?>[0])));
 
-			Predicate combined = buildCombinedPredicate(cb, root, joins);
+			Predicate combined = HCFPredicateUtil.buildForJoins(cb, root, joins, searches);
 			if (combined != null)
 				cq.where(combined);
 
-			if (!orderSpecs.isEmpty())
+			if (!orders.isEmpty())
 				cq.orderBy(buildOrders(cb, root, joins));
 
 			TypedQuery<Object[]> q = session.createQuery(cq);
@@ -250,11 +230,11 @@ public final class HCFQuery<T> {
 
 			cq.select(root);
 
-			Predicate combined = buildCombinedPredicate(cb, root, joins);
+			Predicate combined = HCFPredicateUtil.buildForJoins(cb, root, joins, searches);
 			if (combined != null)
 				cq.where(combined);
 
-			if (!orderSpecs.isEmpty())
+			if (!orders.isEmpty())
 				cq.orderBy(buildOrders(cb, root, joins));
 
 			try {
@@ -278,7 +258,7 @@ public final class HCFQuery<T> {
 			Root<T> root = cq.from(type);
 			Map<String, From<?, ?>> joins = createJoins(root, false);
 
-			Predicate combined = buildCombinedPredicate(cb, root, joins);
+			Predicate combined = HCFPredicateUtil.buildForJoins(cb, root, joins, searches);
 			cq.select(cb.count(root));
 			if (combined != null)
 				cq.where(combined);
@@ -304,11 +284,11 @@ public final class HCFQuery<T> {
 			Path<?> path = HCFPredicateUtil.resolvePath(root, joins, fieldPath);;
 			cq.select(path).distinct(true);
 
-			Predicate combined = buildCombinedPredicate(cb, root, joins);
+			Predicate combined = HCFPredicateUtil.buildForJoins(cb, root, joins, searches);
 			if (combined != null)
 				cq.where(combined);
 
-			if (!orderSpecs.isEmpty())
+			if (!orders.isEmpty())
 				cq.orderBy(buildOrders(cb, root, joins));
 
 			return session.createQuery(cq).getResultList();
@@ -344,7 +324,7 @@ public final class HCFQuery<T> {
 	            selections.add(cb.sum(numExpr).alias(f));
 	        }
 
-	        Predicate combined = buildCombinedPredicate(cb, root, joins);
+	        Predicate combined = HCFPredicateUtil.buildForJoins(cb, root, joins, searches);
 	        cq.select(cb.tuple(selections.toArray(new Selection<?>[0])));
 	        if (combined != null) cq.where(combined);
 
@@ -415,13 +395,13 @@ public final class HCFQuery<T> {
 	}
 
 	public int update(Map<String, Object> values) {
-		Objects.requireNonNull(values, "values is null");
-		if (!joinAssociations.isEmpty()) {
-			throw new IllegalStateException("update() não suporta join(). Remova joins ou execute via SQL/HQL.");
-		}
-
 		Transaction tx = null;
 		try {
+			Objects.requireNonNull(values, "values is null");
+			if (!joinAssociations.isEmpty()) {
+				throw new UnsupportedOperationException("JOIN usage is not allowed for update() — please use SQL/HQL instead.");
+			}
+			
 			tx = session.beginTransaction();
 
 			CriteriaBuilder cb = session.getCriteriaBuilder();
@@ -430,7 +410,7 @@ public final class HCFQuery<T> {
 
 			values.forEach(cu::set);
 
-			Predicate combined = buildCombinedPredicate(cb, root, Map.of());
+			Predicate combined = HCFPredicateUtil.buildForJoins(cb, root, Map.of(), searches);
 			if (combined != null)
 				cu.where(combined);
 
@@ -448,19 +428,20 @@ public final class HCFQuery<T> {
 	}
 
 	public int delete() {
-		if (!joinAssociations.isEmpty()) {
-			throw new IllegalStateException("delete() não suporta join(). Remova joins ou execute via SQL/HQL.");
-		}
-
 		Transaction tx = null;
 		try {
+			
+			if (!joinAssociations.isEmpty()) {
+				throw new UnsupportedOperationException("JOIN usage is not allowed for delete() — please use SQL/HQL instead.");
+			}
+			
 			tx = session.beginTransaction();
 
 			CriteriaBuilder cb = session.getCriteriaBuilder();
 			CriteriaDelete<T> cd = cb.createCriteriaDelete(type);
 			Root<T> root = cd.from(type);
 
-			Predicate combined = buildCombinedPredicate(cb, root, Map.of());
+			Predicate combined = HCFPredicateUtil.buildForJoins(cb, root, Map.of(), searches);
 			if (combined != null)
 				cd.where(combined);
 
@@ -482,8 +463,7 @@ public final class HCFQuery<T> {
 		Objects.requireNonNull(param, "parameter is null");
 		Objects.requireNonNull(op, "operator is null");
 
-		conditions.add((cb, root, joins) -> HCFPredicateUtil.singlePredicate(cb, HCFPredicateUtil.resolvePath(root, joins, fieldPath), param, value));
-		operators.add(op);
+		searches.add(new HCFSearch(fieldPath, value, param, op));
 	}
 
 	private Map<String, From<?, ?>> createJoins(Root<T> root, boolean fetchAllowed) {
@@ -526,45 +506,23 @@ public final class HCFQuery<T> {
 		}
 	}
 
-	private Predicate buildCombinedPredicate(CriteriaBuilder cb, Root<?> root, Map<String, From<?, ?>> joins) {
-		if (conditions.isEmpty())
-			return null;
-
-		Deque<Predicate> stack = new ArrayDeque<>();
-		for (int i = 0; i < conditions.size(); i++) {
-			Predicate p = conditions.get(i).build(cb, root, joins);
-			HCFOperator op = operators.get(i);
-
-			if (op == HCFOperator.NONE) {
-				stack.addLast(p);
-			} else {
-				if (stack.isEmpty()) {
-					stack.addLast(p);
-				} else {
-					Predicate left = stack.removeLast();
-					Predicate combined = (op == HCFOperator.AND) ? cb.and(left, p) : cb.or(left, p);
-					stack.addLast(combined);
-				}
-			}
-		}
-		return stack.getLast();
-	}
-
 	private List<Order> buildOrders(CriteriaBuilder cb, Root<T> root, Map<String, From<?, ?>> joins) {
-		List<Order> orders = new ArrayList<>(orderSpecs.size());
-		for (OrderSpec spec : orderSpecs) {
-			Path<?> p = HCFPredicateUtil.resolvePath(root, joins, spec.fieldPath);;
-			orders.add(spec.asc ? cb.asc(p) : cb.desc(p));
+		List<Order> criteriaOrders = new ArrayList<>(orders.size());
+		for (HCFSort order : orders) {
+			Path<?> p = HCFPredicateUtil.resolvePath(root, joins, order.field());;
+			criteriaOrders.add(order.asc() ? cb.asc(p) : cb.desc(p));
 		}
-		return orders;
+		return criteriaOrders;
 	}
 
 	private void close() {
 		try {
-			if (session != null && session.isOpen())
+			if (session != null && session.isOpen()) {
 				session.close();
+			}
 		} catch (Exception e) {
 			HCFLog.showError(e, "HCFQuery.close");
 		}
 	}
+	
 }

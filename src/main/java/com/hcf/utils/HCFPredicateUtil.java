@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.hcf.HCFSearch;
-import com.hcf.enums.HCFOperator;
-import com.hcf.enums.HCFParameter;
+import com.hcf.query.HCFSearch;
+import com.hcf.query.enums.HCFOperator;
+import com.hcf.query.enums.HCFParameter;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
