@@ -38,6 +38,9 @@ import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Selection;
+import jakarta.persistence.metamodel.Attribute;
+import jakarta.persistence.metamodel.ManagedType;
+import jakarta.persistence.metamodel.PluralAttribute;
 
 public final class HCFQuery<T> {
 
@@ -90,18 +93,6 @@ public final class HCFQuery<T> {
 		return this;
 	}
 
-	public HCFQuery<T> innerJoin(String association) {
-		return join(association, JoinType.INNER);
-	}
-
-	public HCFQuery<T> leftJoin(String association) {
-		return join(association, JoinType.LEFT);
-	}
-
-	public HCFQuery<T> rightJoin(String association) {
-		return join(association, JoinType.RIGHT);
-	}
-
 	public HCFQuery<T> fetchJoin(String association) {
 		return fetchJoin(association, JoinType.INNER);
 	}
@@ -141,12 +132,12 @@ public final class HCFQuery<T> {
 
 			Map<String, From<?, ?>> joins = createJoins(root, true);
 			applyFetchJoins(root);
+			applyFetches(root);
 			cq.select(root);
 			
-			if (!fetchAssociations.isEmpty()) {
-				applyFetches(root);
-				cq.distinct(true);
-			}
+			if (requiresDistinctForFetches(root)) {
+	            cq.distinct(true);
+	        }
 
 			Predicate combined = HCFPredicateUtil.buildForJoins(cb, root, joins, searches);
 			if (combined != null)
@@ -222,11 +213,11 @@ public final class HCFQuery<T> {
 			Root<T> root = cq.from(type);
 			Map<String, From<?, ?>> joins = createJoins(root, true);
 			applyFetchJoins(root);
+			applyFetches(root);
 			
-			if (!fetchAssociations.isEmpty()) {
-				applyFetches(root);
-				cq.distinct(true);
-			}
+			if (requiresDistinctForFetches(root)) {
+	            cq.distinct(true);
+	        }
 
 			cq.select(root);
 
@@ -340,20 +331,6 @@ public final class HCFQuery<T> {
 	    }
 	}
 	
-	public List<T> nativeList(String sql) {
-	    Objects.requireNonNull(sql, "sql is null");
-	    try {
-	        var q = session.createNativeQuery(sql, type);
-	        var result = q.getResultList();
-	        return result;
-	    } catch (Exception e) {
-	        HCFLog.showError(e, "HCFQuery.nativeList");
-	        throw e;
-	    } finally {
-	        close();
-	    }
-	}
-	
 	public List<T> getByInvertedRelation(Class<?> child, String column, Object id) {
 	    String childIdField = HCFUtil.getIdFieldName(session, child);
 	    return new HCFQuery<>(session, type)
@@ -456,6 +433,31 @@ public final class HCFQuery<T> {
 		} finally {
 			close();
 		}
+	}
+	
+	private boolean requiresDistinctForFetches(Root<T> root) {
+	    for (String path : fetchAssociations.keySet()) {
+	        if (isPluralPath(root, path)) return true;
+	    }
+	    for (String path : fetchJoinAssociations.keySet()) {
+	        if (isPluralPath(root, path)) return true;
+	    }
+	    return false;
+	}
+	
+	private boolean isPluralPath(Root<T> root, String dotPath) {
+	    ManagedType<?> mt = (ManagedType<?>) root.getModel();
+	    String[] parts = dotPath.split("\\.");
+	    for (String seg : parts) {
+	        Attribute<?,?> attr = mt.getAttribute(seg);
+	        if (attr instanceof PluralAttribute) {
+	            return true;
+	        }
+	        mt = (ManagedType<?>) ((Attribute<?,?>) attr).getDeclaringType();
+	        Class<?> javaType = attr.getJavaType();
+	        mt = (ManagedType<?>) session.getMetamodel().managedType(javaType);
+	    }
+	    return false;
 	}
 
 	private void addCondition(String fieldPath, HCFParameter param, Object value, HCFOperator op) {

@@ -44,9 +44,13 @@ class HCFQueryTest {
 		Customer carla = new Customer("Carla", 41, false, LocalDateTime.of(2024, 12, 31, 23, 59));
 
 		HCFRepository<Customer> hcfRepository = new HCFRepository<>(Customer.class).manageSessionExternally(true);
-		hcfRepository.saveAll(Arrays.asList(ana, bia));
-		hcfRepository.save(carla);
-		hcfRepository.closeIfExternallyManaged();
+		try {
+			hcfRepository.saveAll(Arrays.asList(ana, bia));
+			hcfRepository.save(carla);
+		} finally {
+			hcfRepository.closeIfExternallyManaged();
+		}
+		
 	}
 
 	@AfterEach
@@ -515,21 +519,6 @@ class HCFQueryTest {
 
 		var none = new HCFQuery<>(Customer.class).where("name", HCFParameter.EQUAL, "Dora").list();
 		assertTrue(none.isEmpty());
-	}
-
-	@Test
-	void hcfquery_nativeList_typed_entity() {
-		var list = new HCFQuery<>(Customer.class).nativeList("""
-				    select *
-				    from customer
-				    where active = true
-				    order by name
-				""");
-
-		assertNotNull(list);
-		assertFalse(list.isEmpty());
-		var names = list.stream().map(Customer::getName).toList();
-		assertTrue(names.contains("Ana"));
 	}
 	
 	@Test

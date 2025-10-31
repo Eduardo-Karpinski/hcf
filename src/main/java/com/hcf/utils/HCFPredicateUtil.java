@@ -97,9 +97,9 @@ public final class HCFPredicateUtil {
 		var stack = new ArrayDeque<Predicate>();
 		for (int i = 0; i < params.size(); i++) {
 			var s = params.get(i);
-			Path<?> field = resolvePath(root, s.getField());
-			Predicate p = singlePredicate(cb, field, s.getParameter(), s.getValue());
-			HCFOperator op = s.getOperator();
+			Path<?> field = resolvePath(root, s.field());
+			Predicate p = singlePredicate(cb, field, s.parameter(), s.value());
+			HCFOperator op = s.operator();
 
 			if (op == HCFOperator.NONE) {
 				stack.addLast(p);
@@ -122,9 +122,9 @@ public final class HCFPredicateUtil {
 		var stack = new ArrayDeque<Predicate>();
 		for (int i = 0; i < params.size(); i++) {
 			var s = params.get(i);
-			Path<?> field = resolvePath(root, joins, s.getField());
-			Predicate p = singlePredicate(cb, field, s.getParameter(), s.getValue());
-			HCFOperator op = s.getOperator();
+			Path<?> field = resolvePath(root, joins, s.field());
+			Predicate p = singlePredicate(cb, field, s.parameter(), s.value());
+			HCFOperator op = s.operator();
 
 			if (op == HCFOperator.NONE) {
 				stack.addLast(p);
