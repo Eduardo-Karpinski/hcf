@@ -26,11 +26,13 @@ public final class HCFUtil {
 	private static final Logger LOGGER = Logger.getLogger("HCF");
 
 	private static final String[] DEFAULT_PACKAGE_EXCLUDES = { "java.", "javax.", "jakarta.", "org.hibernate.",
-			"org.jboss.", "org.junit.", "org.testng.", "org.slf4j.", "ch.qos.logback.", "com.fasterxml.",
-			"io.github.classgraph.", "com.mysql.cj.", "org.eclipse", "org.mariadb.jdbc.", "org.postgresql.",
+			"org.jboss.", "org.junit.", "org.testng.", "org.slf4j.", "ch.qos.", "com.fasterxml.",
+			"io.github.classgraph.", "com.mysql.", "org.eclipse", "org.mariadb.", "org.postgresql.",
 			"com.microsoft.sqlserver.", "oracle.jdbc.", "oracle.ucp.", "org.h2.", "org.sqlite.", "org.apache",
 			"com.ibm.db2.", "org.firebirdsql.", "nonapi.", "org.antlr.", "org.glassfish.", "net.bytebuddy.",
-			"org.apiguardian.", "org.opentest4j.", "sun.", "com.sun.", "org.springframework.", "org.eclipse." };
+			"org.apiguardian.", "org.opentest4j.", "sun.", "com.sun.", "org.springframework.", "org.eclipse.",
+			"org.wildfly", "com.google", "com.ibm", "io.undertow", "org.omg", "io.reactivex", "org.jberet",
+			"io.smallrye", "org.xnio", "org.jvnet" };
 
 	private HCFUtil() {
 
@@ -83,8 +85,8 @@ public final class HCFUtil {
 				.rejectPackages(DEFAULT_PACKAGE_EXCLUDES)
 				.scan()) {
 
-			List<String> roots = scan.getPackageInfo().getAsStringsWithSimpleNames().stream().limit(100).toList();
-			LOGGER.info("[HCF-INFO] Scanned packages (" + roots.size() + "): " + roots);
+			List<String> roots = scan.getPackageInfo().getAsStringsWithSimpleNames();
+			LOGGER.info("[HCF-INFO] Scanned packages (" + roots.size() + "): " + roots.stream().limit(100).toList());
 
 			Set<Class<?>> entities = new HashSet<>(scan.getClassesWithAnnotation(Entity.class.getName()).loadClasses());
 
