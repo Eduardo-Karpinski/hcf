@@ -45,7 +45,6 @@ import jakarta.persistence.metamodel.PluralAttribute;
 public final class HCFQuery<T> {
 
 	private Integer limit, offset;
-	
 	private final Class<T> type;
 	private final Session session;
 	private final List<HCFSort> orders = new ArrayList<>();

@@ -116,7 +116,6 @@ public enum HCFFactory {
 			StandardServiceRegistryBuilder.destroy(standardServiceRegistry);
 			throw new IllegalStateException("Failed to construct SessionFactory", e);
 		}
-
 	}
 	
 	private Properties loadPath(String path) {
