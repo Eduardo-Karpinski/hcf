@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Map.Entry;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -29,20 +30,20 @@ public final class HCFQueryExecutor {
         Objects.requireNonNull(sql, "sql is null");
         Objects.requireNonNull(params, "params is null");
 
-        Transaction tx = null;
+        Transaction transaction = null;
         Session session = null;
         try {
             session = HCFFactory.INSTANCE.getFactory().openSession();
-            tx = session.beginTransaction();
+            transaction = session.beginTransaction();
 
             MutationQuery q = session.createNativeMutationQuery(sql);
             bindParams(q, params);
 
             int updated = q.executeUpdate();
-            tx.commit();
+            transaction.commit();
             return updated;
         } catch (Throwable e) {
-            rollback(tx);
+            rollback(transaction);
             HCFLog.showError(e, "HCFSql.executeNative(params)");
             return -1;
         } finally {
@@ -103,20 +104,20 @@ public final class HCFQueryExecutor {
         Objects.requireNonNull(hql, "hql is null");
         Objects.requireNonNull(params, "params is null");
 
-        Transaction tx = null;
+        Transaction transaction = null;
         Session session = null;
         try {
             session = HCFFactory.INSTANCE.getFactory().openSession();
-            tx = session.beginTransaction();
+            transaction = session.beginTransaction();
 
             MutationQuery q = session.createMutationQuery(hql); // HQL/JPQL DML
             bindParams(q, params);
 
             int updated = q.executeUpdate();
-            tx.commit();
+            transaction.commit();
             return updated;
         } catch (Throwable e) {
-            rollback(tx);
+            rollback(transaction);
             HCFLog.showError(e, "HCFSql.executeHql(params)");
             return -1;
         } finally {
@@ -170,9 +171,11 @@ public final class HCFQueryExecutor {
     }
 
     private static void bindParams(CommonQueryContract query, Map<String, ?> params) {
-        if (params == null || params.isEmpty()) return;
+        if (params == null || params.isEmpty()) {
+        	return;
+        }
 
-        for (Map.Entry<String, ?> e : params.entrySet()) {
+        for (Entry<String, ?> e : params.entrySet()) {
             String name = e.getKey();
             Object value = e.getValue();
 
@@ -186,9 +189,9 @@ public final class HCFQueryExecutor {
         }
     }
 
-    private static void rollback(Transaction tx) {
-        if (tx != null && tx.getStatus() == TransactionStatus.ACTIVE) {
-            try { tx.rollback(); } catch (Exception ignore) {}
+    private static void rollback(Transaction transaction) {
+        if (transaction != null && transaction.getStatus() == TransactionStatus.ACTIVE) {
+            try { transaction.rollback(); } catch (Exception ignore) {}
         }
     }
 

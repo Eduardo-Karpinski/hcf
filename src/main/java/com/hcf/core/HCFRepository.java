@@ -93,16 +93,16 @@ public final class HCFRepository<T> {
 	public int bulkDelete(List<HCFSearch> hcfSearches) {
 		try {
 			beginIfNeeded();
-			CriteriaBuilder cb = session.getCriteriaBuilder();
-			CriteriaDelete<T> cd = cb.createCriteriaDelete(entityClass);
-			Root<T> root = cd.from(entityClass);
+			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+			CriteriaDelete<T> criteriaDelete = criteriaBuilder.createCriteriaDelete(entityClass);
+			Root<T> root = criteriaDelete.from(entityClass);
 
-			Predicate where = HCFPredicateUtil.buildForRoot(cb, root, hcfSearches);
-			if (where != null) {
-				cd.where(where);
+			Predicate predicate = HCFPredicateUtil.buildForRoot(criteriaBuilder, root, hcfSearches);
+			if (predicate != null) {
+				criteriaDelete.where(predicate);
 			}
 
-			int rows = session.createMutationQuery(cd).executeUpdate();
+			int rows = session.createMutationQuery(criteriaDelete).executeUpdate();
 
 			commitIfNeeded();
 
@@ -119,18 +119,18 @@ public final class HCFRepository<T> {
 	public int bulkUpdate(Map<String, Object> values, List<HCFSearch> hcfSearches) {
 		try {
 			beginIfNeeded();
-			CriteriaBuilder cb = session.getCriteriaBuilder();
-			CriteriaUpdate<T> cu = cb.createCriteriaUpdate(entityClass);
-			Root<T> root = cu.from(entityClass);
+			CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+			CriteriaUpdate<T> criteriaUpdate = criteriaBuilder.createCriteriaUpdate(entityClass);
+			Root<T> root = criteriaUpdate.from(entityClass);
 
-			values.forEach(cu::set);
+			values.forEach(criteriaUpdate::set);
 
-			Predicate where = HCFPredicateUtil.buildForRoot(cb, root, hcfSearches);
-			if (where != null) {
-				cu.where(where);
+			Predicate predicate = HCFPredicateUtil.buildForRoot(criteriaBuilder, root, hcfSearches);
+			if (predicate != null) {
+				criteriaUpdate.where(predicate);
 			}
 
-			int rows = session.createMutationQuery(cu).executeUpdate();
+			int rows = session.createMutationQuery(criteriaUpdate).executeUpdate();
 
 			commitIfNeeded();
 

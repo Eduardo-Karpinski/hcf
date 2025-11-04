@@ -1,6 +1,7 @@
 package com.hcf.utils;
 
 import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -24,10 +25,11 @@ public final class HCFPredicateUtil {
 		Objects.requireNonNull(root, "root is null");
 		Objects.requireNonNull(fieldPath, "fieldPath is null");
 		String[] parts = fieldPath.split("\\.");
-		Path<?> p = root.get(parts[0]);
-		for (int i = 1; i < parts.length; i++)
-			p = p.get(parts[i]);
-		return p;
+		Path<?> path = root.get(parts[0]);
+		for (int i = 1; i < parts.length; i++) {
+			path = path.get(parts[i]);
+		}
+		return path;
 	}
 
 	public static Path<?> resolvePath(Root<?> root, Map<String, From<?, ?>> joins, String fieldPath) {
@@ -38,55 +40,56 @@ public final class HCFPredicateUtil {
 		}
 
 		String[] parts = fieldPath.split("\\.");
-		From<?, ?> base = null;
+		From<?, ?> from = null;
 		int start = 0;
 
 		if (joins.containsKey(fieldPath)) {
-			base = joins.get(fieldPath);
+			from = joins.get(fieldPath);
 			start = parts.length;
 		} else {
 			String prefix = "";
 			for (int i = 0; i < parts.length; i++) {
 				prefix = (i == 0) ? parts[0] : prefix + "." + parts[i];
 				if (joins.containsKey(prefix)) {
-					base = joins.get(prefix);
+					from = joins.get(prefix);
 					start = i + 1;
 				}
 			}
 		}
 
 		Path<?> path;
-		if (base == null) {
+		if (from == null) {
 			path = root.get(parts[0]);
 			start = 1;
 		} else {
-			path = base;
+			path = from;
 		}
 
-		for (int i = start; i < parts.length; i++)
+		for (int i = start; i < parts.length; i++) {
 			path = path.get(parts[i]);
+		}
 		return path;
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static Predicate singlePredicate(CriteriaBuilder cb, Path<?> field, HCFParameter p, Object v) {
-		return switch (p) {
-		case TRUE -> cb.isTrue(field.as(Boolean.class));
-		case FALSE -> cb.isFalse(field.as(Boolean.class));
-		case IS_NULL -> cb.isNull(field);
-		case IS_NOT_NULL -> cb.isNotNull(field);
-		case EMPTY -> cb.equal(cb.length(cb.trim(field.as(String.class))), 0);
-		case NOT_EMPTY -> cb.notEqual(cb.length(cb.trim(field.as(String.class))), 0);
-		case IS_ODD -> cb.equal(cb.mod(field.as(Integer.class), 2), 1);
-		case IS_EVEN -> cb.equal(cb.mod(field.as(Integer.class), 2), 0);
-		case LIKE -> cb.like(field.as(String.class), Objects.toString(v, ""));
-		case NOT_LIKE -> cb.notLike(field.as(String.class), Objects.toString(v, ""));
-		case EQUAL -> cb.equal(field, v);
-		case NOT_EQUAL -> cb.notEqual(field, v);
-		case LESS_THAN -> cb.lessThan((Expression) field, (Comparable) v);
-		case GREATER_THAN -> cb.greaterThan((Expression) field, (Comparable) v);
-		case LESS_THAN_OR_EQUAL_TO -> cb.lessThanOrEqualTo((Expression) field, (Comparable) v);
-		case GREATER_THAN_OR_EQUAL_TO -> cb.greaterThanOrEqualTo((Expression) field, (Comparable) v);
+	public static Predicate singlePredicate(CriteriaBuilder criteriaBuilder, Path<?> field, HCFParameter parameter, Object value) {
+		return switch (parameter) {
+		case TRUE -> criteriaBuilder.isTrue(field.as(Boolean.class));
+		case FALSE -> criteriaBuilder.isFalse(field.as(Boolean.class));
+		case IS_NULL -> criteriaBuilder.isNull(field);
+		case IS_NOT_NULL -> criteriaBuilder.isNotNull(field);
+		case EMPTY -> criteriaBuilder.equal(criteriaBuilder.length(criteriaBuilder.trim(field.as(String.class))), 0);
+		case NOT_EMPTY -> criteriaBuilder.notEqual(criteriaBuilder.length(criteriaBuilder.trim(field.as(String.class))), 0);
+		case IS_ODD -> criteriaBuilder.equal(criteriaBuilder.mod(field.as(Integer.class), 2), 1);
+		case IS_EVEN -> criteriaBuilder.equal(criteriaBuilder.mod(field.as(Integer.class), 2), 0);
+		case LIKE -> criteriaBuilder.like(field.as(String.class), Objects.toString(value, ""));
+		case NOT_LIKE -> criteriaBuilder.notLike(field.as(String.class), Objects.toString(value, ""));
+		case EQUAL -> criteriaBuilder.equal(field, value);
+		case NOT_EQUAL -> criteriaBuilder.notEqual(field, value);
+		case LESS_THAN -> criteriaBuilder.lessThan((Expression) field, (Comparable) value);
+		case GREATER_THAN -> criteriaBuilder.greaterThan((Expression) field, (Comparable) value);
+		case LESS_THAN_OR_EQUAL_TO -> criteriaBuilder.lessThanOrEqualTo((Expression) field, (Comparable) value);
+		case GREATER_THAN_OR_EQUAL_TO -> criteriaBuilder.greaterThanOrEqualTo((Expression) field, (Comparable) value);
 		};
 	}
 
@@ -94,21 +97,21 @@ public final class HCFPredicateUtil {
 		if (params == null || params.isEmpty())
 			return null;
 
-		var stack = new ArrayDeque<Predicate>();
+		Deque<Predicate> stack = new ArrayDeque<Predicate>();
 		for (int i = 0; i < params.size(); i++) {
-			var s = params.get(i);
-			Path<?> field = resolvePath(root, s.field());
-			Predicate p = singlePredicate(cb, field, s.parameter(), s.value());
-			HCFOperator op = s.operator();
+			HCFSearch search = params.get(i);
+			Path<?> field = resolvePath(root, search.field());
+			Predicate predicate = singlePredicate(cb, field, search.parameter(), search.value());
+			HCFOperator operator = search.operator();
 
-			if (op == HCFOperator.NONE) {
-				stack.addLast(p);
+			if (operator == HCFOperator.NONE) {
+				stack.addLast(predicate);
 			} else {
 				if (stack.isEmpty()) {
-					stack.addLast(p);
+					stack.addLast(predicate);
 				} else {
 					Predicate left = stack.removeLast();
-					stack.addLast(op == HCFOperator.AND ? cb.and(left, p) : cb.or(left, p));
+					stack.addLast(operator == HCFOperator.AND ? cb.and(left, predicate) : cb.or(left, predicate));
 				}
 			}
 		}
@@ -116,24 +119,25 @@ public final class HCFPredicateUtil {
 	}
 
 	public static Predicate buildForJoins(CriteriaBuilder cb, Root<?> root, Map<String, From<?, ?>> joins, List<HCFSearch> params) {
-		if (params == null || params.isEmpty())
+		if (params == null || params.isEmpty()) {
 			return null;
+		}
 
-		var stack = new ArrayDeque<Predicate>();
+		Deque<Predicate> stack = new ArrayDeque<Predicate>();
 		for (int i = 0; i < params.size(); i++) {
-			var s = params.get(i);
-			Path<?> field = resolvePath(root, joins, s.field());
-			Predicate p = singlePredicate(cb, field, s.parameter(), s.value());
-			HCFOperator op = s.operator();
+			HCFSearch search = params.get(i);
+			Path<?> field = resolvePath(root, joins, search.field());
+			Predicate predicate = singlePredicate(cb, field, search.parameter(), search.value());
+			HCFOperator operator = search.operator();
 
-			if (op == HCFOperator.NONE) {
-				stack.addLast(p);
+			if (operator == HCFOperator.NONE) {
+				stack.addLast(predicate);
 			} else {
 				if (stack.isEmpty()) {
-					stack.addLast(p);
+					stack.addLast(predicate);
 				} else {
 					Predicate left = stack.removeLast();
-					stack.addLast(op == HCFOperator.AND ? cb.and(left, p) : cb.or(left, p));
+					stack.addLast(operator == HCFOperator.AND ? cb.and(left, predicate) : cb.or(left, predicate));
 				}
 			}
 		}
