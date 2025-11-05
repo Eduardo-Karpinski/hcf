@@ -28,7 +28,7 @@ public final class HCFUtil {
 	private static final String[] DEFAULT_PACKAGE_EXCLUDES = { "java.", "javax.", "jakarta.", "org.hibernate.",
 			"org.jboss.", "org.junit.", "org.testng.", "org.slf4j.", "ch.qos.", "com.fasterxml.",
 			"io.github.classgraph.", "com.mysql.", "org.eclipse", "org.mariadb.", "org.postgresql.",
-			"com.microsoft.sqlserver.", "oracle.jdbc.", "oracle.ucp.", "org.h2.", "org.sqlite.", "org.apache",
+			"com.microsoft.", "oracle.jdbc.", "oracle.ucp.", "org.h2.", "org.sqlite.", "org.apache",
 			"com.ibm.db2.", "org.firebirdsql.", "nonapi.", "org.antlr.", "org.glassfish.", "net.bytebuddy.",
 			"org.apiguardian.", "org.opentest4j.", "sun.", "com.sun.", "org.springframework.", "org.eclipse.",
 			"org.wildfly", "com.google", "com.ibm", "io.undertow", "org.omg", "io.reactivex", "org.jberet",
