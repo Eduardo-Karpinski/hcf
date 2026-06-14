@@ -55,18 +55,22 @@ public final class HCFQuery<T> {
 	private final LinkedHashMap<String, JoinType> joinAssociations = new LinkedHashMap<>();
 	private final LinkedHashMap<String, JoinType> fetchAssociations = new LinkedHashMap<>();
 	private final LinkedHashMap<String, JoinType> fetchJoinAssociations = new LinkedHashMap<>();
+	private final boolean manageSessionExternally;
 	
 	public HCFQuery(Class<T> type) {
 		this(HCFFactory.INSTANCE.getFactory(), type);
 	}
 
 	public HCFQuery(SessionFactory sessionFactory, Class<T> type) {
-		this(Objects.requireNonNull(sessionFactory, "SessionFactory is null").openSession(), type);
+		this.session = Objects.requireNonNull(sessionFactory, "SessionFactory is null").openSession();
+        this.type = Objects.requireNonNull(type, "Entity type is null");
+        this.manageSessionExternally = false;
 	}
 
 	private HCFQuery(Session session, Class<T> type) {
 		this.session = Objects.requireNonNull(session, "Session is null");
 		this.type = Objects.requireNonNull(type, "Entity type is null");
+        this.manageSessionExternally = true;
 	}
 
 	public HCFQuery<T> where(String fieldPath, HCFParameter param, Object value) {
@@ -551,6 +555,7 @@ public final class HCFQuery<T> {
 	}
 
 	private void close() {
+        if (manageSessionExternally) return;
 		try {
 			if (session != null && session.isOpen()) {
 				session.close();

@@ -1,5 +1,7 @@
 package com.hcf.query;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -20,7 +22,8 @@ import com.hcf.utils.HCFLog;
 
 public final class HCFQueryExecutor {
 
-    private HCFQueryExecutor() {}
+    private HCFQueryExecutor() {
+    }
 
     public static int executeNative(String sql) {
         return executeNative(sql, Map.of());
@@ -44,7 +47,7 @@ public final class HCFQueryExecutor {
             return updated;
         } catch (Throwable e) {
             rollback(transaction);
-            HCFLog.showError(e, "HCFSql.executeNative(params)");
+            HCFLog.showError(e, "HCFQueryExecutor.executeNative(params)");
             return -1;
         } finally {
             close(session);
@@ -66,7 +69,7 @@ public final class HCFQueryExecutor {
             bindParams(q, params);
             return q.getResultList();
         } catch (Exception e) {
-            HCFLog.showError(e, "HCFSql.listNative(Object[], params)");
+            HCFLog.showError(e, "HCFQueryExecutor.listNative(Object[], params)");
             return null;
         } finally {
             close(session);
@@ -89,7 +92,7 @@ public final class HCFQueryExecutor {
             bindParams(q, params);
             return q.getResultList();
         } catch (Exception e) {
-            HCFLog.showError(e, "HCFSql.listNative(Class, params)");
+            HCFLog.showError(e, "HCFQueryExecutor.listNative(Class, params)");
             return null;
         } finally {
             close(session);
@@ -118,7 +121,7 @@ public final class HCFQueryExecutor {
             return updated;
         } catch (Throwable e) {
             rollback(transaction);
-            HCFLog.showError(e, "HCFSql.executeHql(params)");
+            HCFLog.showError(e, "HCFQueryExecutor.executeHql(params)");
             return -1;
         } finally {
             close(session);
@@ -141,7 +144,7 @@ public final class HCFQueryExecutor {
             bindParams(q, params);
             return q.getResultList();
         } catch (Exception e) {
-            HCFLog.showError(e, "HCFSql.listHql(Class, params)");
+            HCFLog.showError(e, "HCFQueryExecutor.listHql(Class, params)");
             return null;
         } finally {
             close(session);
@@ -163,7 +166,7 @@ public final class HCFQueryExecutor {
             bindParams(q, params);
             return q.getResultList();
         } catch (Exception e) {
-            HCFLog.showError(e, "HCFSql.listHql(Object[], params)");
+            HCFLog.showError(e, "HCFQueryExecutor.listHql(Object[], params)");
             return null;
         } finally {
             close(session);
@@ -172,7 +175,7 @@ public final class HCFQueryExecutor {
 
     private static void bindParams(CommonQueryContract query, Map<String, ?> params) {
         if (params == null || params.isEmpty()) {
-        	return;
+            return;
         }
 
         for (Entry<String, ?> e : params.entrySet()) {
@@ -182,7 +185,16 @@ public final class HCFQueryExecutor {
             if (value instanceof Collection<?> col) {
                 query.setParameterList(name, col);
             } else if (value != null && value.getClass().isArray()) {
-                query.setParameterList(name, Arrays.asList((Object[]) value));
+                if (value instanceof Object[] objArray) {
+                    query.setParameterList(name, Arrays.asList(objArray));
+                } else {
+                    int length = Array.getLength(value);
+                    List<Object> list = new ArrayList<>(length);
+                    for (int i = 0; i < length; i++) {
+                        list.add(Array.get(value, i));
+                    }
+                    query.setParameterList(name, list);
+                }
             } else {
                 query.setParameter(name, value);
             }
@@ -191,14 +203,20 @@ public final class HCFQueryExecutor {
 
     private static void rollback(Transaction transaction) {
         if (transaction != null && transaction.getStatus() == TransactionStatus.ACTIVE) {
-            try { transaction.rollback(); } catch (Exception ignore) {}
+            try {
+                transaction.rollback();
+            } catch (Exception ignore) {
+            }
         }
     }
 
     private static void close(Session session) {
         if (session != null && session.isOpen()) {
-            try { session.close(); } catch (Exception ignore) {}
+            try {
+                session.close();
+            } catch (Exception ignore) {
+            }
         }
     }
-    
+
 }

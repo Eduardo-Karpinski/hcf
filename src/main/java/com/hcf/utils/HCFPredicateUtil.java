@@ -105,7 +105,12 @@ public final class HCFPredicateUtil {
 			HCFOperator operator = search.operator();
 
 			if (operator == HCFOperator.NONE) {
-				stack.addLast(predicate);
+				if (stack.isEmpty()) {
+					stack.addLast(predicate);
+				} else {
+					Predicate left = stack.removeLast();
+					stack.addLast(cb.and(left, predicate));
+				}
 			} else {
 				if (stack.isEmpty()) {
 					stack.addLast(predicate);
@@ -131,7 +136,12 @@ public final class HCFPredicateUtil {
 			HCFOperator operator = search.operator();
 
 			if (operator == HCFOperator.NONE) {
-				stack.addLast(predicate);
+				if (stack.isEmpty()) {
+					stack.addLast(predicate);
+				} else {
+					Predicate left = stack.removeLast();
+					stack.addLast(cb.and(left, predicate));
+				}
 			} else {
 				if (stack.isEmpty()) {
 					stack.addLast(predicate);
